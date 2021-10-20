@@ -29,7 +29,7 @@ varying vec3 sunVector;
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces]
 #define SUNRAYS
 //#define MOONRAYS
-#define SkyRenderingType colortex0 //[colortex0 composite]
+#define SkyRenderingType composite //[colortex0 composite]
 #define SUNRAYS_DECAY 0.90 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
 #define SUNRAYS_LENGHT 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
 #define SUNRAYS_BRIGHTNESS 0.2 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
