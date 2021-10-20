@@ -1,9 +1,9 @@
 #version 120
+//godrays and bloom from mrsheepshaders
 //--------------------------------------------INCLUDE------------------------------------------
 #include "/files/tonemaps/tonemap_uncharted.glsl"
 #include "/files/tonemaps/tonemap_aces.glsl"
 //#include "tonemaps/tonemap_reinhard.glsl"
-#include "/files/filters/dither.glsl"
 //#include "/files/rays/godrays.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
@@ -37,7 +37,7 @@ varying vec3 sunVector;
 #define SUNRAYS_COLOR_RED 3.0 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define SUNRAYS_TYPE Godrays //[Godrays Crespecular]
 
-#define BLOOM
+//#define BLOOM
 #define BLOOM_AMOUNT 5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define BLOOM_QUALITY 5 //[1 2 3 4 5 6 7 8 9 10 11 12]
 #define BLOOM_QUALITY2 -2 //[-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12]
@@ -52,19 +52,17 @@ varying vec3 sunVector;
 #define Vignette_Distance 1.7 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define Vignette_Strenght 1.0 ///[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define Vignette_Radius 3.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-   float dither = bayer64(gl_FragCoord.xy);
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
+
    mat4 ditherr = mat4(
       0,       0.5,    0.125,  0.625,
       0.75,    0.25,   0.875,  0.375,
       0.1875,  0.6875, 0.0625, 0.5625,
       0.9375,  0.4375, 0.8125, 0.3125
    );
-
-
 
    float timefract = worldTime;
    float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -93,8 +91,6 @@ varying vec3 sunVector;
    }
 
 void main() {
-//const float Default = composite;
-//uniform sampler2D atmos = colortex0;
 	vec4 color = texture2D(SkyRenderingType, texcoord.st);
 
 
@@ -104,11 +100,11 @@ void main() {
   		vec2 pos1 = tpos.xy/tpos.z;
   		vec2 Godrays = pos1*0.5+0.5;
       float threshold = 0.99 * far;
-
+//
       vec2 Crespecular = sunPosition.xy / -sunPosition.z;
       Crespecular.y *= aspectRatio;
   Crespecular = (Crespecular + 1.0)/2.0;
-
+//
         if ((worldTime < 14000 || worldTime > 22000) && sunPosition.z < 0)
 
           {
@@ -171,6 +167,7 @@ colorGR += sample;
   color.r = (color.r*COLORCORRECT_RED);
     color.g = (color.g*COLORCORRECT_GREEN);
     color.b = (color.b*COLORCORRECT_BLUE);
+
   color = color / (color + 2.2) * (1.0+2.0);
 #endif
 

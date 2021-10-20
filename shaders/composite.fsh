@@ -3,7 +3,6 @@
 //--------------------------------------------INCLUDE------------------------------------------
 
 #include "/files/filters/distort.glsl"
-#include "/files/filters/dither.glsl"
 
 
 
@@ -66,8 +65,6 @@ const float ambientOcclusionLevel = 0.0f;
 #define COLORCORRECT_GREEN 1.4 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define COLORCORRECT_BLUE 1.1 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define GAMMA 1.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-#define CROSSPROCESS_TERRAIN
-//#define Dynamic_Flicker
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 
@@ -77,21 +74,11 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
-float tick = frameTimeCounter;
-
 float AdjustLightmapTorch(in float torch) {
-
-  float tick2 = sin(tick*1);
-
-  float tick3 = fract(tick2);
-
 
 
        float K =LIGHT_STRENGHT;
        float P = 5.06f;
-#ifdef Dynamic_Flicker
-    return K * tick3* pow(torch, P);
-    #endif
         return K * pow(torch, P);
 }
 
@@ -117,7 +104,7 @@ vec3 GetLightmapColor(in vec2 Lightmap){
     const vec3 TorchColor = vec3(0.5f, 0.25f, 0.08f);
 
 
-//custom_skyLighting--------------------------------------------------------------------------------------------------------------------------------------
+//custom_skyLighting--------------------------------------------------------------------------------------------------------------------------------------не очень
     vec3 sunsetSkyColor = vec3(0.05f, 0.15f, 0.3f);
   	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
@@ -184,13 +171,6 @@ vec3 GetShadow(float depth) {
 void main(){
 
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(2.2f));
-
-    #ifdef CROSSPROCESS_TERRAIN
-    Albedo.r = (Albedo.r*COLORCORRECT_RED);
-      Albedo.g = (Albedo.g*COLORCORRECT_GREEN);
-      Albedo.b = (Albedo.b*COLORCORRECT_BLUE);
-    Albedo = Albedo / (Albedo + 2.2) * (1.0+2.0);
-    #endif
 
     float Depth = texture2D(depthtex0, TexCoords).r;
     if(Depth == 1.0f){
