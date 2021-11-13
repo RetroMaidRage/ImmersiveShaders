@@ -37,8 +37,8 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
     if (mc_Entity.x == 31.0 || mc_Entity.x == 32.0 || mc_Entity.x == 33.0) {
 
       float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.12 + 0.02;
-       vpos.x += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
-            vpos.y += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
+       vpos.x += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + -5.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
+            vpos.z += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + 10.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
                 //  position.y += sin((tick * pi / (28.0 * speed)) + (position.x + 0.0) * 0.1 + (position.z + 0.0) * 0.1) * magnitude;
     }
 
@@ -55,7 +55,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 		float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.12 + 0.02;
 		 vpos.z += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
 		 	 vpos.x += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
-					
+
 	}
 #endif
 vpos = gbufferModelView * vpos;

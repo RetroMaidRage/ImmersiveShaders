@@ -5,6 +5,7 @@
 #include "/files/tonemaps/tonemap_aces.glsl"
 //#include "tonemaps/tonemap_reinhard.glsl"
 //#include "/files/rays/godrays.glsl"
+#include "/files/filters/dither.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -95,6 +96,7 @@ void main() {
 
 
   #ifdef SUNRAYS
+     float jitter = fract(worldTime + bayer2(gl_FragCoord.xy));
   		vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
   		tpos = vec4(tpos.xyz/tpos.w,1.0);
   		vec2 pos1 = tpos.xy/tpos.z;
@@ -136,7 +138,7 @@ colorGR += sample;
   			colorGR.g = colorGR.g, fogColor;
   			colorGR.b = colorGR.b, fogColor;
                   color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*(TimeSunrise+TimeNoon+TimeSunset)* clamp(1.0 - rainStrength,0.1,1.0));
-                  color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*TimeMidnight* clamp(1.0 - rainStrength,0.1,1.0));
+                //  color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*TimeMidnight* clamp(1.0 - rainStrength,0.1,1.0));
           }
   #endif
 

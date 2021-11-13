@@ -2,7 +2,7 @@
 //deferred.fsh deferred.vsh ssao.glsl dither.glsl by negoros
 //CODE BY BSL CAPT TATSU
 
-#define AmbientOcclusion
+//#define AmbientOcclusion
 
 varying vec2 texcoord;
 
