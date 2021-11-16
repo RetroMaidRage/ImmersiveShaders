@@ -11,12 +11,5 @@ vec3 Uncharted2TonemapOp(vec3 color)
   #define F 0.35 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 
 
-  //float A = 0.25;
-  //float B = 0.29;
-//  float C = 0.10;
-  //	float D = 0.2;
-  //	float E = 0.03;
-  //	float F = 0.35;
-
     return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
 }

@@ -1,5 +1,4 @@
 #version 120
-//godrays and bloom from mrsheepshaders
 //--------------------------------------------INCLUDE------------------------------------------
 #include "/files/tonemaps/tonemap_uncharted.glsl"
 #include "/files/tonemaps/tonemap_aces.glsl"
