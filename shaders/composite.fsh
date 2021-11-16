@@ -38,6 +38,8 @@ varying vec4 heldLightColor;
 uniform sampler2D depthtex1;
 uniform float heightScale;
 uniform float rainStrength;
+uniform sampler2D gdepth;
+uniform sampler2D gaux1;
 //--------------------------------------------CONST------------------------------------------
 
 
@@ -67,6 +69,11 @@ const float ambientOcclusionLevel = 0.0f;
 #define GAMMA 1.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
+
+vec4 aux2 = texture2D(gdepth, texcoord.st);
+vec3 aux = texture2D(gaux1, texcoord.st).rgb;
+float iswater = float(aux2.g > 0.12 && aux2.g < 0.28);
+float iswater2 = float(aux.g > 0.04 && aux.g < 0.07);
 
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -133,7 +140,9 @@ vec3 TransparentShadow(in vec3 SampleCoords){
 
 float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
     vec4 ShadowColor0 = texture2D(shadowcolor0, SampleCoords.xy);
+
     vec3 TransmittedColor = ShadowColor0.rgb * (1.0 - ShadowColor0.a);
+
     return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0), ShadowVisibility0);
 }
 
@@ -222,7 +231,9 @@ float ShadowOff = 0.25;
 
 
     vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
-
+if (iswater > 0.0) {
+   specularStrength = 0.0f;
+}
 vec3 DiffuseAndSpecular = Diffuse + specular;
 
 #ifdef VanillaAmbientOcclusion
