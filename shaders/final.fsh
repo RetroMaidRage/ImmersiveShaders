@@ -3,8 +3,8 @@
 //--------------------------------------------INCLUDE------------------------------------------
 #include "/files/tonemaps/tonemap_uncharted.glsl"
 #include "/files/tonemaps/tonemap_aces.glsl"
-//#include "tonemaps/tonemap_reinhard.glsl"
-//#include "/files/rays/godrays.glsl"
+#include "/files/tonemaps/tonemap_reinhard2.glsl"
+#include "/files/tonemaps/tonemap_lottes.glsl"
 #include "/files/filters/dither.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
@@ -27,7 +27,7 @@ uniform sampler2D colortex0;
 varying vec3 sunVector;
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
-#define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces]
+#define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
 #define SUNRAYS
 //#define MOONRAYS
 #define SkyRenderingType composite //[colortex0 composite]
