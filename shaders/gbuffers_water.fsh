@@ -12,7 +12,7 @@ void main() {
 //	color *= texture2D(lightmap, lmcoord);
 //	vec4 Vanilla = texture2D(texture, texcoord) * glcolor;
 
-	vec4 cwater = vec4(1.5)*glcolor*color;
+	vec4 cwater = vec4(1.5)*glcolor*color; 
 
 
 	cwater.r = (cwater.r*1);
