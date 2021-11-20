@@ -3,7 +3,7 @@
 //--------------------------------------------INCLUDE------------------------------------------
 
 #include "/files/filters/distort.glsl"
-
+#include "/files/filters/dither.glsl"
 
 
 //--------------------------------------------UNIFORMS------------------------------------------
@@ -62,6 +62,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define VanillaAmbientOcclusion
 #define specularLight
 
+#define VL_STEPS 12
 
 #define COLORCORRECT_RED 1.6 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define COLORCORRECT_GREEN 1.4 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -70,10 +71,6 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 
-vec4 aux2 = texture2D(gdepth, texcoord.st);
-vec3 aux = texture2D(gaux1, texcoord.st).rgb;
-float iswater = float(aux2.g > 0.12 && aux2.g < 0.28);
-float iswater2 = float(aux.g > 0.04 && aux.g < 0.07);
 
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -82,6 +79,10 @@ float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - (
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
 vec3  interpolateSmooth3(vec3  v) { return v * v * (3.0 - 2.0 * v); }
+
+vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
+vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
+vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
 
 float AdjustLightmapTorch(in float torch) {
 
@@ -120,7 +121,7 @@ vec3 GetLightmapColor(in vec2 Lightmap){
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + daySkyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 //custom_skyLighting--------------------------------------------------------------------------------------------------------------------------------------
   const vec3 StaticSkyColor = vec3(0.05f, 0.15f, 0.3f);
-//vec3 CustomSkyColor = vec3;
+
 
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
@@ -134,13 +135,13 @@ float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords) {
 }
 
 vec3 TransparentShadow(in vec3 SampleCoords){
+
     float ShadowVisibility0 = Visibility(shadowtex0, SampleCoords);
     float ShadowVisibility1 = Visibility(shadowtex1, SampleCoords);
 
 
 float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
     vec4 ShadowColor0 = texture2D(shadowcolor0, SampleCoords.xy);
-
     vec3 TransmittedColor = ShadowColor0.rgb * (1.0 - ShadowColor0.a);
 
     return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0), ShadowVisibility0);
@@ -179,6 +180,36 @@ vec3 GetShadow(float depth) {
     return ShadowAccum;
 }
 
+vec3 viewToShadow(vec3 viewPos) {
+    vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
+         shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
+         shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
+
+        // /!\ Always place the matrix before the vector in a matrix multiplication
+
+    return vec3(DistortPosition(shadowPos.xy), shadowPos.z); // Distort the XY coordinates (not the Z!!) using the function you probably already have
+}
+////////////////////////////////////////////////////////////////////////////////////////
+
+vec3 volumetricLighting(vec3 viewPos) {
+    vec3 color = vec3(0.0);
+    vec3 startPos  = gbufferModelViewInverse[3].xyz;
+    vec3 endPos    = mat3(gbufferModelViewInverse) * viewPos;
+    float stepSize = distance(startPos, endPos) / float(VL_STEPS);
+
+    float jitter = fract(frameTimeCounter + bayer16(gl_FragCoord.xy));
+    vec3 rayDir  = (normalize(endPos - startPos) * stepSize) * jitter;
+    vec3 rayPos  = startPos + rayDir * stepSize;
+
+    for(int i = 0; i < VL_STEPS; i++) {
+        vec3 samplePos   = projMAD3(shadowProjection, transMAD3(shadowModelView, rayPos));
+        vec3 sampleColor = TransparentShadow(vec3(DistortPosition(samplePos.xy), samplePos.z) * 0.5 + 0.5);
+        color  += sampleColor;
+        rayPos += rayDir;
+    }
+    return color / VL_STEPS;
+}
+////////////////////////////////////////////////////////////////////////////////////////
 void main(){
 
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(2.2f));
@@ -211,7 +242,7 @@ vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
   testLight.r = (testLight.r*2.6);
     testLight.g = (testLight.g*1.4);
     testLight.b = (testLight.b*11.1);
-  testLight = testLight / (testLight + 4.2) * (1.0+2.0);
+  testLight = testLight / (testLight + 4.2);
 
     vec4 fragPos = gbufferProjectionInverse * vec4(TexCoords, texture2D(depthtex1, TexCoords).r, 1.0);
       fragPos = vec4(fragPos.xyz/fragPos.w, fragPos.w);
@@ -226,18 +257,22 @@ vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
 #endif
 ////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef VolumetricLightingOutput
+#endif
+////////////////////////////////////////////////////////////////////////////////////
+
 float ShadowOn = NdotL;
 float ShadowOff = 0.25;
-
-
-    vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
-if (iswater > 0.0) {
-   specularStrength = 0.0f;
-}
-vec3 DiffuseAndSpecular = Diffuse + specular;
 
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif
+
+    vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
+
+vec3 DiffuseAndSpecular = Diffuse + specular;
+
+
     gl_FragData[0] = vec4(OUTPUT, 1.0f);
+
 }

@@ -90,12 +90,40 @@ varying vec3 sunVector;
    color.rgb *= (1.0f - dist) /Vignette_Strenght;
    }
 
+   float interleavedGradientNoise() {
+       return fract(52.9829189 * fract(0.06711056 * gl_FragCoord.x + 0.00583715 * gl_FragCoord.y + 0.00623715)) * 0.25;
+   }
+
 void main() {
+  const float kernel = 10.0;
+  const float weight = 1.0;
+
+
+  float blur = 0.3;
+
+    float resolution = blur * 0.1;
+    int n = 10;
+    int i = -n;
+    int totalWeight = 0;
+
+    vec2 st = texcoord.st;
+
+    vec4 outColor = vec4(0.0);
+    for(; i < n; ++i) {
+        vec2 uv = st + vec2(float(i) / 2.0 / float(n) * resolution, 0);
+        outColor += texture2D(colortex0, uv);
+        totalWeight += 1;
+    }
+
+
 	vec4 color = texture2D(SkyRenderingType, texcoord.st);
 
 
   #ifdef SUNRAYS
-     float jitter = fract(worldTime + bayer2(gl_FragCoord.xy));
+  float phi = 1.618;
+    float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
+     float jitter = fract(worldTime + interleavedGradientNoise());
+
   		vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
   		tpos = vec4(tpos.xyz/tpos.w,1.0);
   		vec2 pos1 = tpos.xy/tpos.z;

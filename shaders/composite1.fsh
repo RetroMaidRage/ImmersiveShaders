@@ -1,4 +1,4 @@
-#version 120
+#version 150 compatibility
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D depthtex0;
 uniform sampler2D colortex0;
@@ -10,6 +10,8 @@ varying vec4 texcoord;
 uniform int isEyeInWater;
 uniform int worldTime;
 uniform vec3 fogColor;
+
+flat in int water;
 //--------------------------------------------DEFINE------------------------------------------
 #define CustomFog
 #define fogSetting customFogColor//[skyColor fogColor]
@@ -68,7 +70,6 @@ void main() {
     #ifdef CustomFog
     if (isTerrain) color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * fogDistance / far, 1.0));
     #endif
-
 
 
     gl_FragData[0] = vec4(color, 1.0);
