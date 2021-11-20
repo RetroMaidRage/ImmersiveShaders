@@ -174,12 +174,12 @@ colorGR += sample;
 
   #ifdef BLOOM
   	int j;
-  	int i;
+  	int ii;
   	vec4 sum = vec4(0);
           float gaux1 = 0;
-      for( i= -BLOOM_QUALITY2 ;i < BLOOM_QUALITY; i++) {
+      for( ii= -BLOOM_QUALITY2 ;ii < BLOOM_QUALITY; ii++) {
           for (j = -BLOOM_QUALITY2; j < BLOOM_QUALITY; j++) {
-              vec2 coord = texcoord.st + vec2(j,i) * 0.001;
+              vec2 coord = texcoord.st + vec2(j,ii) * 0.001;
                   if(coord.x > 0 && coord.x < 1 && coord.y > 0 && coord.y < 1){
                       sum += texture2D(composite, coord) * BLOOM_AMOUNT;
                       gaux1 += 1;
