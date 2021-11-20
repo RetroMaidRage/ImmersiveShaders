@@ -198,6 +198,11 @@ colorGR += sample;
     color.b = (color.b*COLORCORRECT_BLUE);
 
   color = color / (color + 2.2) * (1.0+2.0);
+
+  if(GAMMA > 0.0)
+       color = vec4(color.rgb, 1.0);
+   else
+       color = vec4(10.0, 0.0, 0.0, 1.0);
 #endif
 
 #ifdef TONEMAPPING

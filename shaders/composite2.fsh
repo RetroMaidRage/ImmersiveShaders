@@ -1,5 +1,7 @@
 #version 120
-
+//--------------------------------------------INCLUDE------------------------------------------
+#include "/files/filters/noises.glsl"
+//--------------------------------------------UNIFORMS------------------------------------------
 uniform float frameTimeCounter;
 uniform sampler2D gcolor;
 uniform sampler2D shadowcolor0;
@@ -23,14 +25,14 @@ varying vec2 TexCoords;
 uniform vec3 shadowLightPosition;
 uniform sampler2D colortex1;
 const int noiseTextureResolution = 512;  // Clouds Resolution [512 1024 2048 4096 8192]
+//--------------------------------------------DEFINE------------------------------------------
+#define CloudySky
 
-
-float interleavedGradientNoise() {
-		return fract(52.9829189 * fract(0.06711056 * gl_FragCoord.x + 0.00583715 * gl_FragCoord.y + 0.00623715)) * 0.25;
-}
 void main() {
 
     vec4 color = texture2D(gcolor, texcoord);
+
+#ifdef CloudySky
 
     vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
     vec3 clipPos = screenPos * 2.0 - 1.0;
@@ -59,8 +61,15 @@ float cloudNoise = texture2D(noisetex, FinalDirection.xy/2).r+ interleavedGradie
 float cloudNoise2pt = texture2D(noisetex, FinalDirection.xz/4).r+ interleavedGradientNoise();;
 float cloudNoise3pt = texture2D(noisetex, FinalDirection.xz/6).r+ interleavedGradientNoise();;
 
-float Finalnoise = float(mix(cloudNoise, cloudNoise2pt, cloudNoise3pt));
-float cloudFinalNoise = float(mix(Finalnoise, cloudNoise2pt, cloudNoise3pt));
+float cloudNoise2 = texture2D(noisetex, FinalDirection.xy/10).r;
+float cloudNoise2pt2 = texture2D(noisetex, FinalDirection.xz/5).r;
+float cloudNoise3pt2 = texture2D(noisetex, FinalDirection.xz).r;
+
+float cloudPreFinalnoise = float(mix(cloudNoise, cloudNoise2pt, cloudNoise3pt));
+float cloudPreFinalnoise2 = float(mix(cloudNoise2, cloudNoise2pt2, cloudNoise3pt2));
+
+float cloudFinalNoise = float(mix(cloudPreFinalnoise, cloudNoise2pt, cloudNoise3pt));
+float cloudFinalNoise2 = float(mix(cloudFinalNoise, cloudPreFinalnoise2, cloudPreFinalnoise));
 
 
     vec4 cloudColor = texture2D(gaux3, vec2(0.5));
@@ -68,11 +77,13 @@ float cloudFinalNoise = float(mix(Finalnoise, cloudNoise2pt, cloudNoise3pt));
 			color.g = (color.g*2);
 			color.b = (color.b*2);
 
-  color = color / (color + 5.2) * (1.0+2.0);
-    Clouds = mix(color.rgb, cloudColor.rgb, cloudFinalNoise);
+  color = color / (color + 10.2) * (1.0+2.0);
+    Clouds = mix(color.rgb, cloudColor.rgb, cloudFinalNoise2);
+color = color + vec4(Clouds, 1.0);
 
 }
 
+#endif
 /* DRAWBUFFERS:0 */
-    gl_FragData[0] = color + vec4(Clouds, 1.0);
+    gl_FragData[0] = color;
 }
