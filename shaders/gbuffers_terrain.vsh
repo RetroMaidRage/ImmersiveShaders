@@ -20,8 +20,6 @@ varying vec4 Color;
 #define waving_grass
 #define waving_leaves_speed 0.1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 #define waving_grass_speed 0.07 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
-#define waves
-#define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
 const float pi = 3.14f;
 
 float tick = frameTimeCounter;
@@ -49,15 +47,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
             vpos.y += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
     }
   #endif
-  #ifdef waves
-	if (mc_Entity.x == 35.0) {
 
-		float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.12 + 0.02;
-		 vpos.z += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
-		 	 vpos.x += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
-
-	}
-#endif
 vpos = gbufferModelView * vpos;
 gl_Position = gl_ProjectionMatrix * vpos;
     TexCoords = gl_MultiTexCoord0.st;
