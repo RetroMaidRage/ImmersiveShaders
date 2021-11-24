@@ -4,7 +4,7 @@ varying vec2 TexCoords;
 varying vec2 LightmapCoords;
 varying vec3 Normal;
 varying vec4 Color;
-
+uniform sampler2D noisetex;
 // The texture atlas
 uniform sampler2D texture;
 

@@ -3,8 +3,9 @@
 //--------------------------------------------INCLUDE------------------------------------------
 
 #include "/files/filters/distort.glsl"
+#include "/files/filters/distort2.glsl"
 #include "/files/filters/dither.glsl"
-
+#include "/files/filters/noises.glsl"
 
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D colortex0;
@@ -40,6 +41,7 @@ uniform float heightScale;
 uniform float rainStrength;
 uniform sampler2D gdepth;
 uniform sampler2D gaux1;
+flat in int water;
 //--------------------------------------------CONST------------------------------------------
 
 
@@ -78,11 +80,6 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
-vec3  interpolateSmooth3(vec3  v) { return v * v * (3.0 - 2.0 * v); }
-
-vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
-vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
-vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
 
 float AdjustLightmapTorch(in float torch) {
 
@@ -92,15 +89,10 @@ float AdjustLightmapTorch(in float torch) {
         return K * pow(torch, P);
 }
 
-
-
-
 float AdjustLightmapSky(in float sky){
     float sky_2 = sky * sky;
     return sky * sky_2;
 }
-
-
 
 vec2 AdjustLightmap(in vec2 Lightmap){
     vec2 NewLightMap;
@@ -113,16 +105,11 @@ vec3 GetLightmapColor(in vec2 Lightmap){
     Lightmap = AdjustLightmap(Lightmap);
     const vec3 TorchColor = vec3(0.5f, 0.25f, 0.08f);
 
-
-//custom_skyLighting--------------------------------------------------------------------------------------------------------------------------------------не очень
     vec3 sunsetSkyColor = vec3(0.05f, 0.15f, 0.3f);
   	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + daySkyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
-//custom_skyLighting--------------------------------------------------------------------------------------------------------------------------------------
   const vec3 StaticSkyColor = vec3(0.05f, 0.15f, 0.3f);
-
-
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
     vec3 SkyLighting = Lightmap.y * SkyColorType;
@@ -133,6 +120,24 @@ vec3 GetLightmapColor(in vec2 Lightmap){
 float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords) {
     return step(SampleCoords.z - 0.001f, texture2D(ShadowMap, SampleCoords.xy).r);
 }
+
+//Calculates shadow coordinates
+vec3 calculate_shadow_coord(vec4 world_position)
+{
+    vec4 shadow_projection = shadowProjection * shadowModelView * world_position;  //Convert world position into position in shadow projection space
+    shadow_projection.xyz = distort(shadow_projection.xyz); //Apply distortion
+
+    vec3 shadow_coords = shadow_projection.xyz * 0.5 + 0.5; //Convert it into screen space
+    return shadow_coords;
+}
+
+float calculate_shadow(vec3 shadow_coords)
+{
+   return step(shadow_coords.z -  0.001f, texture2D(shadowtex0, shadow_coords.xy).x);
+}
+
+//Calculates shadow coordinates
+
 
 vec3 TransparentShadow(in vec3 SampleCoords){
 
@@ -189,26 +194,46 @@ vec3 viewToShadow(vec3 viewPos) {
 
     return vec3(DistortPosition(shadowPos.xy), shadowPos.z); // Distort the XY coordinates (not the Z!!) using the function you probably already have
 }
+
+//float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
+  //vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
+    //   shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
+    //   shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
+  //  float sampleShadow = texture2D(shadowtex0, shadowPos.xy).r;
+  //  return sampleShadow;
+//}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
-vec3 volumetricLighting(vec3 viewPos) {
-    vec3 color = vec3(0.0);
-    vec3 startPos  = gbufferModelViewInverse[3].xyz;
-    vec3 endPos    = mat3(gbufferModelViewInverse) * viewPos;
-    float stepSize = distance(startPos, endPos) / float(VL_STEPS);
 
-    float jitter = fract(frameTimeCounter + bayer16(gl_FragCoord.xy));
-    vec3 rayDir  = (normalize(endPos - startPos) * stepSize) * jitter;
-    vec3 rayPos  = startPos + rayDir * stepSize;
+//feet position at input viewPos
+//float volumetric_light(vec3 viewPos)
+//{
+//    int SAMPLES = 128;
+//    float accum_density = 10.0;
 
-    for(int i = 0; i < VL_STEPS; i++) {
-        vec3 samplePos   = projMAD3(shadowProjection, transMAD3(shadowModelView, rayPos));
-        vec3 sampleColor = TransparentShadow(vec3(DistortPosition(samplePos.xy), samplePos.z) * 0.5 + 0.5);
-        color  += sampleColor;
-        rayPos += rayDir;
-    }
-    return color / VL_STEPS;
-}
+  //  vec4 start_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(0.0, 0.0, 0.0, 1.0);
+  //  vec4 end_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(viewPos, 1.0);
+
+  //  float ray_length = length(end_position.xyz - start_position.xyz) / float(SAMPLES);
+  //  vec3 ray_increment = normalize(end_position.xyz - start_position.xyz) * ray_length;
+  //  vec3 ray_position = start_position.xyz;
+
+
+  //  for(int i = 0; i < SAMPLES; ++i)
+  //  {
+
+  //      vec3 shadow_position = distort(ray_position.xyz) * 0.5 + 0.5;
+
+    //    accum_density += calculate_shadow(shadowtex0, shadow_position);
+
+    //    ray_position += ray_increment;
+  //  }
+
+  //  accum_density /= float(SAMPLES);
+  //  return accum_density*0.1;
+//}
 ////////////////////////////////////////////////////////////////////////////////////////
 void main(){
 
@@ -257,8 +282,7 @@ vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
 #endif
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef VolumetricLightingOutput
-#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 float ShadowOn = NdotL;
@@ -267,10 +291,27 @@ float ShadowOff = 0.25;
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif
+ float depthh = texture2D(depthtex0, texcoord).x; //Sample depth buffer
+vec3 screenPos = vec3(texcoord, texture2D(depthtex, texcoord).r);
+vec3 clipPos = screenPos * 2.0 - 1.0;
+   vec3 clip_position = vec3(texcoord, depthh) * 2.0 - 1.0; //Clip space position
+vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
+vec3 viewPos = tmp.xyz / tmp.w;
+ vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
+
+ float depth = texture2D(depthtex0, texcoord).x; //Sample depth buffer
+
+    //Positions
+
+
+ //View space position
+
 
     vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
+    vec3 DiffuseAndSpecular = Diffuse + specular;
 
-vec3 DiffuseAndSpecular = Diffuse + specular;
+
+
 
 
     gl_FragData[0] = vec4(OUTPUT, 1.0f);

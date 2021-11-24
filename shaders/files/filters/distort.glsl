@@ -9,5 +9,10 @@ vec2 DistortPosition(in vec2 position){
     return position / DistortionFactor;
 }
 
+vec3 DistortPosition3(in vec3 position){
+    float CenterDistance = length(position);
+    float DistortionFactor = mix(1.0f, CenterDistance, DISORT_THREASHOLD);
+    return position / DistortionFactor;
+}
 // End of include guard
 #endif

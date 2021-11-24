@@ -24,6 +24,8 @@ uniform float displayWidth;
 uniform sampler2D noisetex;
 uniform sampler2D colortex0;
 varying vec3 sunVector;
+uniform float viewWidth;
+uniform float viewHeight;
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
@@ -95,25 +97,53 @@ varying vec3 sunVector;
    }
 
 void main() {
-  const float kernel = 10.0;
-  const float weight = 1.0;
 
+  #ifdef Gaussian_Blur
+  float Pi = 6.28318530718; // Pi*2
 
-  float blur = 0.3;
+      // GAUSSIAN BLUR SETTINGS {{{
+      float Directions = 16.0; // BLUR DIRECTIONS (Default 16.0 - More is better but slower)
+      float Quality = 3.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
+      float size = 8.0; // BLUR SIZE (Radius)
+      // GAUSSIAN BLUR SETTINGS }}}
+  vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
 
-    float resolution = blur * 0.1;
-    int n = 10;
-    int i = -n;
-    int totalWeight = 0;
+      vec2 Radius = size / vec2(viewWidth, viewHeight);
 
-    vec2 st = texcoord.st;
+        vec4 Blur = texture(colortex0, uv);
 
-    vec4 outColor = vec4(0.0);
-    for(; i < n; ++i) {
-        vec2 uv = st + vec2(float(i) / 2.0 / float(n) * resolution, 0);
-        outColor += texture2D(colortex0, uv);
-        totalWeight += 1;
+  for( float d=0.0; d<Pi; d+=Pi/Directions)
+  {
+  for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
+    {
+  Blur += texture( colortex0, uv+vec2(cos(d),sin(d))*Radius*i);
     }
+  }
+#endif
+
+#ifdef RadialBlur
+const int nsamples = 10;
+  //vec2 center = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+ float blurStart = 1.0;
+   float blurWidth = 0.1;
+
+
+  vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+
+  // uv -= center;
+   float precompute = blurWidth * (1.0 / float(nsamples - 1));
+
+   vec4 color3 = vec4(0.0);
+   for(int i = 0; i < nsamples; i++)
+   {
+       float scale = blurStart + (float(i)* precompute);
+       color3 += texture(colortex0, uv * scale);
+   }
+
+
+   color3 /= float(nsamples);
+#endif
+
 
 
 	vec4 color = texture2D(SkyRenderingType, texcoord.st);
@@ -134,6 +164,7 @@ void main() {
       Crespecular.y *= aspectRatio;
   Crespecular = (Crespecular + 1.0)/2.0;
 //
+
         if ((worldTime < 14000 || worldTime > 22000) && sunPosition.z < 0)
 
           {
@@ -146,10 +177,10 @@ vec3 sample = vec3(0.0);
 for (int i = 0; i < GR_SAMPLES; i++) {
 texCoord -= delta;
 
-if (texCoord.x < 0.0 || texCoord.x > 1.0) {
-if (texCoord.y < 0.0 || texCoord.y > 1.0) { break;
-                }
-          }
+//if (texCoord.x < 0.0 || texCoord.x > 1.0) {
+//if (texCoord.y < 0.0 || texCoord.y > 1.0) { break;
+  //              }
+    //      }
 
 if (getDepth(texCoord) > threshold) {
 sample = texture2D(gaux1, texCoord).rgb;
@@ -164,6 +195,7 @@ colorGR += sample;
   			colorGR.r = colorGR.r, fogColor;
   			colorGR.g = colorGR.g, fogColor;
   			colorGR.b = colorGR.b, fogColor;
+
                   color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*(TimeSunrise+TimeNoon+TimeSunset)* clamp(1.0 - rainStrength,0.1,1.0));
                 //  color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*TimeMidnight* clamp(1.0 - rainStrength,0.1,1.0));
           }
@@ -198,11 +230,6 @@ colorGR += sample;
     color.b = (color.b*COLORCORRECT_BLUE);
 
   color = color / (color + 2.2) * (1.0+2.0);
-
-  if(GAMMA > 0.0)
-       color = vec4(color.rgb, 1.0);
-   else
-       color = vec4(10.0, 0.0, 0.0, 1.0);
 #endif
 
 #ifdef TONEMAPPING
@@ -213,8 +240,9 @@ color.rgb = TonemappingType(color.rgb)*GAMMA;
 VignetteColor(color.rgb);
 #endif
 
+vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
 
-
-gl_FragColor = vec4(color.rgb, 1.0f);
+float desaturationFactor = (rainStrength-0.2);
+gl_FragColor = vec4( mix( color.rgb , gray , desaturationFactor ) , 1.0 );
 
 }
