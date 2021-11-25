@@ -105,7 +105,7 @@ vec3 GetLightmapColor(in vec2 Lightmap){
     Lightmap = AdjustLightmap(Lightmap);
     const vec3 TorchColor = vec3(0.5f, 0.25f, 0.08f);
 
-    vec3 sunsetSkyColor = vec3(0.05f, 0.15f, 0.3f);
+    vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
   	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + daySkyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);

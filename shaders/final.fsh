@@ -9,6 +9,7 @@
 varying vec4 texcoord;
 uniform sampler2D gcolor;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
 uniform sampler2D composite;
 uniform vec3 sunPosition;
 uniform mat4 gbufferProjection;
@@ -26,6 +27,12 @@ uniform sampler2D colortex0;
 varying vec3 sunVector;
 uniform float viewWidth;
 uniform float viewHeight;
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelViewInverse;
+uniform vec3 cameraPosition;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferPreviousProjection;
+uniform vec3 previousCameraPosition;
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
@@ -55,6 +62,9 @@ uniform float viewHeight;
 #define Vignette_Strenght 1.0 ///[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define Vignette_Radius 3.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
+#define MOTIONBLUR
+#define MOTIONBLUR_AMOUNT 2
+
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
@@ -83,6 +93,9 @@ uniform float viewHeight;
 
 
 
+
+
+
    void VignetteColor(inout vec3 color) {
    float dist = distance(texcoord.st, vec2(0.5)) * 2.0;
    dist /= Vignette_Distance;
@@ -97,7 +110,7 @@ uniform float viewHeight;
    }
 
 void main() {
-
+	vec4 color = texture2D(SkyRenderingType, texcoord.st);
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
 
@@ -144,9 +157,65 @@ const int nsamples = 10;
    color3 /= float(nsamples);
 #endif
 
+#ifdef MOTIONBLUR
+
+	float depth = texture2D(depthtex1, texcoord.st).x;
+
+	float noblur = texture2D(gaux1, texcoord.st).r;
 
 
-	vec4 color = texture2D(SkyRenderingType, texcoord.st);
+		if (depth > 0.9999999) {
+		depth = 1;
+		}
+
+
+
+
+		if (depth < 1.9999999) {
+		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * depth - 1.0, 1.0);
+
+		vec4 fragposition = gbufferProjectionInverse * currentPosition;
+		fragposition = gbufferModelViewInverse * fragposition;
+		fragposition /= fragposition.w;
+		fragposition.xyz += cameraPosition;
+
+		vec4 previousPosition = fragposition;
+		previousPosition.xyz -= previousCameraPosition;
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition /= previousPosition.w;
+
+		vec2 velocity = (currentPosition - previousPosition).st * 0.007 * MOTIONBLUR_AMOUNT;
+		velocity = velocity;
+
+		int samples = 1;
+
+		if (noblur > 0.9) {
+			velocity = vec2(0,0);
+		}
+
+
+		vec2 coord = texcoord.st + velocity;
+
+
+		for (int i = 0; i < 8; ++i, coord += velocity) {
+			if (coord.s > 1.0 || coord.t > 1.0 || coord.s < 0.0 || coord.t < 0.0) {
+				break;
+			}
+
+
+			color += texture2D(composite, coord);
+			++samples;
+
+		}
+			color = (color/1.0)/samples;
+		}
+
+
+
+#endif
+
+
 
 
   #ifdef SUNRAYS
@@ -243,6 +312,6 @@ VignetteColor(color.rgb);
 vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
 
 float desaturationFactor = (rainStrength-0.2);
-gl_FragColor = vec4( mix( color.rgb , gray , desaturationFactor ) , 1.0 );
+gl_FragColor = vec4( color.rgb , 1.0 );
 
 }
