@@ -16,6 +16,27 @@ float hash(in vec2 p)
     return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);
 }
 
+float hash12(vec2 p)
+{
+	vec3 p3  = fract(vec3(p.xyx) * 1031);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+vec2 hash22(vec2 p){
+    vec2 p2 = fract(p * vec2(.1031,.1030));
+    p2 += dot(p2, p2.yx+19.19);
+    return fract((p2.x+p2.y)*p2);
+}
+
+vec2 hash23(vec2 p)
+{
+	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx+19.19);
+    return fract((p3.xx+p3.yz)*p3.zy);
+
+}
+
 float noise(in vec2 p)
 {
     vec2 i = floor(p);
@@ -83,4 +104,32 @@ float SimplexPerlin2D( vec2 P )
     m = max(0.5 - m, 0.0);
     m = m*m;
     return dot(m*m, grad_results) * FINAL_NORMALIZATION;
+}
+
+#define round(x) floor( (x) + .5 )
+
+float simplex2D(vec2 p ){
+    const float K1 = (sqrt(3.)-1.)/2.;
+    const float K2 = (3.-sqrt(3.))/6.;
+    const float K3 = K2*2.;
+
+    vec2 i = floor( p + dot(p,vec2(K1)) );
+
+    vec2 a = p - i + dot(i,vec2(K2));
+    vec2 o = 1.-clamp((a.yx-a)*1.e35,0.,1.);
+    vec2 b = a - o + K2;
+    vec2 c = a - 1.0 + K3;
+
+    vec3 h = clamp( .5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0. ,1. );
+
+    h*=h;
+    h*=h;
+
+    vec3 n = vec3(
+        dot(a,hash22(i   )-.5),
+        dot(b,hash22(i+o )-.5),
+        dot(c,hash22(i+1.)-.5)
+    );
+
+    return dot(n,h)*140.;
 }

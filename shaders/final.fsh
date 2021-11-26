@@ -5,6 +5,7 @@
 #include "/files/tonemaps/tonemap_reinhard2.glsl"
 #include "/files/tonemaps/tonemap_lottes.glsl"
 #include "/files/filters/dither.glsl"
+#include "/files/filters/noises.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -33,19 +34,21 @@ uniform vec3 cameraPosition;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
+uniform vec3 skyColor;
+uniform float frameTimeCounter;
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
 #define SUNRAYS
-//#define MOONRAYS
+
 #define SkyRenderingType composite //[colortex0 composite]
 #define SUNRAYS_DECAY 0.90 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
 #define SUNRAYS_LENGHT 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
-#define SUNRAYS_BRIGHTNESS 0.2 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
-#define SUNRAYS_SAMPLES 32 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
+#define SUNRAYS_BRIGHTNESS 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
+#define SUNRAYS_SAMPLES 24 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
 #define SUNRAYS_COLOR_RED 3.0 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define SUNRAYS_TYPE Godrays //[Godrays Crespecular]
-
+#define SR_Color_Type SunRaysFogColor //[SunRaysCustomColor SunRaysFogColor SunRaysSkyColor]
 //#define BLOOM
 #define BLOOM_AMOUNT 5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define BLOOM_QUALITY 5 //[1 2 3 4 5 6 7 8 9 10 11 12]
@@ -56,6 +59,7 @@ uniform vec3 previousCameraPosition;
 #define COLORCORRECT_BLUE 1.1 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define GAMMA 1.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define CROSSPROCESS
+#define ColorSettings Default //[Summertime Default]
 
 #define Vignette
 #define Vignette_Distance 1.7 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -63,7 +67,13 @@ uniform vec3 previousCameraPosition;
 #define Vignette_Radius 3.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
 #define MOTIONBLUR
-#define MOTIONBLUR_AMOUNT 2
+#define MOTIONBLUR_AMOUNT 2 //[1 2 3 4 5 6 7 8 9 10 11 12]
+//#define RadialBlur
+//#define Gaussian_Blur
+#define ScreenSpaceRain
+#define RainDrops
+//#define SimpleFog
+//#define FilmGrain
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
@@ -105,11 +115,50 @@ uniform vec3 previousCameraPosition;
    color.rgb *= (1.0f - dist) /Vignette_Strenght;
    }
 
-   float interleavedGradientNoise() {
-       return fract(52.9829189 * fract(0.06711056 * gl_FragCoord.x + 0.00583715 * gl_FragCoord.y + 0.00623715)) * 0.25;
-   }
+void RainDrop(inout vec3 color){
+  color.rgb *= 1.0f;
+
+}
+
+vec2 RainDropCalc(vec2 p) {
+
+    p += simplex2D(p*0.1) * 3.; // distort drops
+
+    float t = frameTimeCounter;
+
+    p *= vec2(.025, .025 * .25);
+
+    p.y += t * .25; // make drops fall
+
+    vec2 rp = round(p);
+    vec2 dropPos = p - rp;
+    vec2 noise = hash22(rp);
+
+    dropPos.y *= 4.;
+
+    t = t * noise.y + (noise.x*6.28);
+
+    vec2 trailPos = vec2(dropPos.x, fract((dropPos.y-t)*2.) * .5 - .25 );
+
+    dropPos.y += cos( t + cos(t) );  // make speed vary
+
+    float trailMask = clamp(dropPos.y*2.5+.5,0.,1.); // hide trail in front of drop
+
+    float dropSize  = dot(dropPos,dropPos)/3;
+
+    float trailSize = clamp(trailMask*dropPos.y-0.5,0.,1.) + 0.5;
+    trailSize = dot(trailPos,trailPos) * trailSize * trailSize;
+
+    float drop  = clamp(dropSize  * -60.+ 3.*noise.y, 0., 1.);
+    float trail = clamp(trailSize * -60.+ .5*noise.y, 0., 1.);
+
+    trail *= trailMask; // hide trail in front of drop
+
+    return drop * dropPos + trailPos * trail;
+}
 
 void main() {
+    vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
 	vec4 color = texture2D(SkyRenderingType, texcoord.st);
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
@@ -119,7 +168,7 @@ void main() {
       float Quality = 3.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
       float size = 8.0; // BLUR SIZE (Radius)
       // GAUSSIAN BLUR SETTINGS }}}
-  vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+
 
       vec2 Radius = size / vec2(viewWidth, viewHeight);
 
@@ -141,7 +190,7 @@ const int nsamples = 10;
    float blurWidth = 0.1;
 
 
-  vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+
 
   // uv -= center;
    float precompute = blurWidth * (1.0 / float(nsamples - 1));
@@ -215,9 +264,6 @@ const int nsamples = 10;
 
 #endif
 
-
-
-
   #ifdef SUNRAYS
   float phi = 1.618;
     float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
@@ -265,8 +311,11 @@ colorGR += sample;
   			colorGR.g = colorGR.g, fogColor;
   			colorGR.b = colorGR.b, fogColor;
 
-                  color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*(TimeSunrise+TimeNoon+TimeSunset)* clamp(1.0 - rainStrength,0.1,1.0));
+                vec4  SunRaysCustomColor = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*(TimeSunrise+TimeNoon+TimeSunset)* clamp(1.0 - rainStrength,0.1,1.0));
                 //  color = (color + GR_EXPOSURE * vec4(colorGR.r * SUNRAYS_COLOR_RED, colorGR.g * 1.12, colorGR.b * 0.50, 0.01)*TimeMidnight* clamp(1.0 - rainStrength,0.1,1.0));
+                vec4 SunRaysFogColor = (color + GR_EXPOSURE * vec4(colorGR.r * fogColor.r*2, colorGR.g * fogColor.g, colorGR.b *fogColor.b, 0.01));
+                  vec4 SunRaysSkyColor = (color + GR_EXPOSURE * vec4(colorGR.r * skyColor.r, colorGR.g * skyColor.g, colorGR.b *skyColor.b, 0.01));
+                color = SR_Color_Type;
           }
   #endif
 
@@ -291,8 +340,6 @@ colorGR += sample;
   		color += sum*sum*0.012;
   #endif
 
-
-
 #ifdef CROSSPROCESS
   color.r = (color.r*COLORCORRECT_RED);
     color.g = (color.g*COLORCORRECT_GREEN);
@@ -309,7 +356,55 @@ color.rgb = TonemappingType(color.rgb)*GAMMA;
 VignetteColor(color.rgb);
 #endif
 
+#ifdef ScreenSpaceRain
+if (rainStrength == 1.0){
+	vec3 raintex = texture(noisetex,vec2(uv.x*2.0,uv.y*0.1+frameTimeCounter*0.085)).rgb/2.0;
+	vec2 where = (uv.xy-raintex.xy);
+	vec3 texchur1 = texture(colortex0,vec2(where.x,where.y)).rgb/2;
+  color.rgb +=texchur1;
+  color /=1.2;
+}
+#endif
+
+#ifdef FilmGrain
+float invLum = clamp(1.0 - dot(vec3(0.299,0.587,0.114), color.rgb), 0.0, 1.0);
+float seed = (uv.x + .0) * (uv.y + 4.0) * (mod(frameTimeCounter,10.0) + 12342.876);
+float grainR = fract((mod(seed, 13.0) + 1.0) * (mod(seed, 127.0) + 1.0)) - 0.5;
+float grainG = fract((mod(seed, 15.0) + 1.0) * (mod(seed, 109.0) + 1.0)) - 0.5;
+float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
+vec3 grain = vec3(grainR, grainG, grainB);
+       color.rgb += grain/20;
+ #endif
+
 vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
+
+vec3 NfogColor = fogColor*1.5;
+
+vec3 Summertime =  NfogColor;
+Summertime.r = NfogColor.r*2;
+Summertime /=10;
+
+#ifdef RainDrops
+if (rainStrength == 1.0){
+  uv += RainDropCalc(gl_FragCoord.xy);
+color += texture2D(colortex0, uv);
+color /=1.2;
+}
+#endif
+
+#ifdef SimpleFog
+vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
+vec3 clipPos = screenPos * 2.0 - 1.0;
+vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
+vec3 viewPos = tmp.xyz / tmp.w;
+vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
+
+
+float fogDistance = length(-world_position)/12;
+vec3 fogcolor = vec3(1.0, 1.0, 1.0);
+vec3 colorfog = mix(color.rgb, fogcolor, fogDistance)/2;
+color.rgb += colorfog/6;
+#endif
 
 float desaturationFactor = (rainStrength-0.2);
 gl_FragColor = vec4( color.rgb , 1.0 );

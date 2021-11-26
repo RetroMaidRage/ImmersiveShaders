@@ -58,18 +58,14 @@ const float ambientOcclusionLevel = 0.0f;
 #define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.11 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GrassShadow ShadowOn //[ShadowOn ShadowOff]
-
+#define ColorSettings Default //[Summertime Default]
 #define SkyColorType DynamicSkyColor //[DynamicSkyColor StaticSkyColor]
+#define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 
 #define VanillaAmbientOcclusion
 #define specularLight
 
 #define VL_STEPS 12
-
-#define COLORCORRECT_RED 1.6 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-#define COLORCORRECT_GREEN 1.4 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-#define COLORCORRECT_BLUE 1.1 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-#define GAMMA 1.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 
@@ -81,11 +77,18 @@ float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - (
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
 
+    vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
+  	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
+  	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
+    vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
+
+
+
 float AdjustLightmapTorch(in float torch) {
 
 
        float K =LIGHT_STRENGHT;
-       float P = 5.06f;
+       float P = 10.06f;
         return K * pow(torch, P);
 }
 
@@ -103,12 +106,8 @@ vec2 AdjustLightmap(in vec2 Lightmap){
 
 vec3 GetLightmapColor(in vec2 Lightmap){
     Lightmap = AdjustLightmap(Lightmap);
-    const vec3 TorchColor = vec3(0.5f, 0.25f, 0.08f);
+    const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
-    vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
-  	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
-  	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
-    vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + daySkyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
   const vec3 StaticSkyColor = vec3(0.05f, 0.15f, 0.3f);
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
@@ -141,6 +140,15 @@ float calculate_shadow(vec3 shadow_coords)
 
 vec3 TransparentShadow(in vec3 SampleCoords){
 
+  vec3 NfogColor = fogColor*1.5;
+
+vec3 Summertime =  NfogColor;
+Summertime.r = NfogColor.r*2;
+
+vec3 Default = fogColor*1.5;
+Default.r +=0.5;
+
+
     float ShadowVisibility0 = Visibility(shadowtex0, SampleCoords);
     float ShadowVisibility1 = Visibility(shadowtex1, SampleCoords);
 
@@ -149,7 +157,7 @@ float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
     vec4 ShadowColor0 = texture2D(shadowcolor0, SampleCoords.xy);
     vec3 TransmittedColor = ShadowColor0.rgb * (1.0 - ShadowColor0.a);
 
-    return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0), ShadowVisibility0);
+    return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0)*ColorSettings, ShadowVisibility0);
 }
 
 
@@ -260,8 +268,11 @@ vec3 Vieww = ViewWw.xyz / ViewWw.w;
 
 vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
      vec3 viewDir = normalize(lightDir - Vieww.xyz);
-
-  float specularStrength = 0.45;
+       float specularStrength = 0.0;
+if (rainStrength == 1){
+     specularStrength = 1.0;
+}
+  //float specularStrength = 0.0;
   vec3 testLight = vec3(0.5, 0.25, 0.0);
 
   testLight.r = (testLight.r*2.6);

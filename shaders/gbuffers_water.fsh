@@ -42,7 +42,7 @@ void main() {
 
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
-	  cwater.b = (cwater.b*1.2);
+	  cwater.b = (cwater.b*0.8);
 	cwater = cwater / (cwater + 4.2) * (1.0+2.0);
 
 /* DRAWBUFFERS:0 */

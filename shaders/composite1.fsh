@@ -10,14 +10,15 @@ varying vec4 texcoord;
 uniform int isEyeInWater;
 uniform int worldTime;
 uniform vec3 fogColor;
-
+uniform float rainStrength;
 flat in int water;
 //--------------------------------------------DEFINE------------------------------------------
 #define CustomFog
 #define fogSetting customFogColor//[skyColor fogColor]
 #define fogDistance 0.35  ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
-#define fogDensityNight 0.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+#define fogDensityNight 1.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define fogDensitySunset 1.2 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+
 #define WaterFog
 #define LavaFog
 
@@ -47,6 +48,8 @@ void main() {
 
     vec3 sunsetFogCol = vec3(0.8, 0.66, 0.5)*fogDensitySunset;
 
+
+
     vec3 fogCol = skyColor;
     vec3 customFogColor = interpolateSmooth3(sunsetFogCol*TimeSunrise + fogCol*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight);
 
@@ -70,6 +73,8 @@ void main() {
     #ifdef CustomFog
     if (isTerrain) color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * fogDistance / far, 1.0));
     #endif
+color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * rainStrength / far, 1.0));
+color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
 
 
     gl_FragData[0] = vec4(color, 1.0);
