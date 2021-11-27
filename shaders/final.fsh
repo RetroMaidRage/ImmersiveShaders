@@ -78,6 +78,7 @@ uniform float frameTimeCounter;
 #define fogDensityNight 1.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define fogDensitySunset 1.2 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 //#define FilmGrain
+#define FilmGrainStrenght 10 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
@@ -164,6 +165,30 @@ vec2 RainDropCalc(vec2 p) {
 void main() {
     vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
 	vec4 color = texture2D(SkyRenderingType, texcoord.st);
+  vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
+  vec3 clipPos = screenPos * 2.0 - 1.0;
+  vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
+  vec3 viewPos = tmp.xyz / tmp.w;
+  vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
+  float depth = texture2D(depthtex1, texcoord.st).x;
+  float noblur = texture2D(gaux1, texcoord.st).r;
+    if (depth > 0.9999999) {
+    depth = 1;
+    }
+    if (depth < 1.9999999) {
+    vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * depth - 1.0, 1.0);
+
+    vec4 fragposition = gbufferProjectionInverse * currentPosition;
+    fragposition = gbufferModelViewInverse * fragposition;
+    fragposition /= fragposition.w;
+    fragposition.xyz += cameraPosition;
+
+    vec4 previousPosition = fragposition;
+    previousPosition.xyz -= previousCameraPosition;
+    previousPosition = gbufferPreviousModelView * previousPosition;
+    previousPosition = gbufferPreviousProjection * previousPosition;
+    previousPosition /= previousPosition.w;
+
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
 
@@ -212,31 +237,6 @@ const int nsamples = 10;
 
 #ifdef MOTIONBLUR
 
-	float depth = texture2D(depthtex1, texcoord.st).x;
-
-	float noblur = texture2D(gaux1, texcoord.st).r;
-
-
-		if (depth > 0.9999999) {
-		depth = 1;
-		}
-
-
-
-
-		if (depth < 1.9999999) {
-		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * depth - 1.0, 1.0);
-
-		vec4 fragposition = gbufferProjectionInverse * currentPosition;
-		fragposition = gbufferModelViewInverse * fragposition;
-		fragposition /= fragposition.w;
-		fragposition.xyz += cameraPosition;
-
-		vec4 previousPosition = fragposition;
-		previousPosition.xyz -= previousCameraPosition;
-		previousPosition = gbufferPreviousModelView * previousPosition;
-		previousPosition = gbufferPreviousProjection * previousPosition;
-		previousPosition /= previousPosition.w;
 
 		vec2 velocity = (currentPosition - previousPosition).st * 0.007 * MOTIONBLUR_AMOUNT;
 		velocity = velocity;
@@ -377,7 +377,8 @@ float grainR = fract((mod(seed, 13.0) + 1.0) * (mod(seed, 127.0) + 1.0)) - 0.5;
 float grainG = fract((mod(seed, 15.0) + 1.0) * (mod(seed, 109.0) + 1.0)) - 0.5;
 float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
 vec3 grain = vec3(grainR, grainG, grainB);
-       color.rgb += grain/20;
+
+       color.rgb += grain/FilmGrainStrenght;
  #endif
 
 vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
@@ -397,12 +398,6 @@ color /=1.2;
 #endif
 
 #ifdef GroundScreenSpaceFog
-vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
-vec3 clipPos = screenPos * 2.0 - 1.0;
-vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
-vec3 viewPos = tmp.xyz / tmp.w;
-vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
-
     float depthfog = texture2D(depthtex0, texcoord.st).r;
 bool isTerrain = depthfog < 1.0;
 
@@ -418,6 +413,7 @@ float fogDistance = length(world_position.y)/GroundScreenSpaceFogDistance;
 vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDestiny;
     if (isTerrain) color.rgb += colorfog/6;
 #endif
+
 
 float desaturationFactor = (rainStrength-0.2);
 gl_FragColor = vec4( color.rgb , 1.0 );

@@ -29,7 +29,7 @@ float Auto_ExpsoureY() {
 
 float Auto_ExpsoureX() {
 
-	const float exposureAmount = 2.5;
+	const float exposureAmount = 0.25;
 
 	float aE_lightmap	= 1.0 - eyeAdaptX;
 				aE_lightmap = mix(aE_lightmap, 1.0, pow(TimeMidnight, 2.5));
@@ -41,7 +41,7 @@ void main() {
 vec3 color = texture2D(gcolor, texcoord).rgb;
 #ifdef AutoExpsoure
 color.rgb = color.rgb * Auto_ExpsoureY();
-
+color.rgb = color.rgb * Auto_ExpsoureX();
 #endif
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }
