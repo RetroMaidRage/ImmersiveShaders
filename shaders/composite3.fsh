@@ -14,7 +14,7 @@ const float eyeBrightnessHalflife = 10.0f;
 float TimeMidnight = ((clamp(frameTimeCounter, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(frameTimeCounter, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
 float eyeAdaptY = eyeBrightnessSmooth.y / 240.0;
-float eyeAdaptX = eyeBrightnessSmooth.x / 170.0;
+float eyeAdaptX = eyeBrightnessSmooth.x / 180.0;
 
 float Auto_ExpsoureY() {
 
@@ -41,7 +41,7 @@ void main() {
 vec3 color = texture2D(gcolor, texcoord).rgb;
 #ifdef AutoExpsoure
 color.rgb = color.rgb * Auto_ExpsoureY();
-color.rgb = color.rgb * Auto_ExpsoureX();
+
 #endif
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }

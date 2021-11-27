@@ -72,7 +72,11 @@ uniform float frameTimeCounter;
 //#define Gaussian_Blur
 #define ScreenSpaceRain
 #define RainDrops
-//#define SimpleFog
+#define GroundScreenSpaceFog
+#define GroundScreenSpaceFogDistance 2 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define GroundScreenSpaceDestiny 4 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define fogDensityNight 1.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+#define fogDensitySunset 1.2 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 //#define FilmGrain
 
    float getDepth(vec2 coord) {
@@ -392,18 +396,27 @@ color /=1.2;
 }
 #endif
 
-#ifdef SimpleFog
+#ifdef GroundScreenSpaceFog
 vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
 vec3 clipPos = screenPos * 2.0 - 1.0;
 vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
 vec3 viewPos = tmp.xyz / tmp.w;
 vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
 
+    float depthfog = texture2D(depthtex0, texcoord.st).r;
+bool isTerrain = depthfog < 1.0;
 
-float fogDistance = length(-world_position)/12;
-vec3 fogcolor = vec3(1.0, 1.0, 1.0);
-vec3 colorfog = mix(color.rgb, fogcolor, fogDistance)/2;
-color.rgb += colorfog/6;
+vec3 nightFogCol = vec3(0.2, 0.3, 0.5)*fogDensityNight;
+
+vec3 sunsetFogCol = vec3(0.8, 0.66, 0.5)*fogDensitySunset;
+vec3 fogCol = skyColor;
+
+vec3 customFogColor = sunsetFogCol*TimeSunrise + fogCol*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight;
+
+float fogDistance = length(world_position.y)/GroundScreenSpaceFogDistance;
+
+vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDestiny;
+    if (isTerrain) color.rgb += colorfog/6;
 #endif
 
 float desaturationFactor = (rainStrength-0.2);
