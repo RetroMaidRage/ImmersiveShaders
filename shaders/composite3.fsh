@@ -13,10 +13,10 @@ const float eyeBrightnessHalflife = 10.0f;
 
 float TimeMidnight = ((clamp(frameTimeCounter, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(frameTimeCounter, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
-float eyeAdaptY = eyeBrightnessSmooth.y / 240.0;
-float eyeAdaptX = eyeBrightnessSmooth.x / 180.0;
+float eyeAdaptY = eyeBrightnessSmooth.y / 240.0; //sky
+float eyeAdaptX = eyeBrightnessSmooth.x / 180.0; //block
 
-float Auto_ExpsoureY() {
+float Auto_ExpsoureY() { //sky
 
 	const float exposureAmount = 2.5;
 
@@ -27,7 +27,7 @@ float Auto_ExpsoureY() {
 
 }
 
-float Auto_ExpsoureX() {
+float Auto_ExpsoureX() { //block
 
 	const float exposureAmount = 0.25;
 
