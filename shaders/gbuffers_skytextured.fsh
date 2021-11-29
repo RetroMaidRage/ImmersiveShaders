@@ -7,8 +7,8 @@ uniform sampler2D gcolor;
 uniform sampler2D gaux1;
 uniform sampler2D colortex0;
 
-#define sunColorRed 12.6 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
-#define sunColorGreen 1.4
+#define sunColorRed 11.1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define sunColorGreen 5.4
 #define sunColorBlue 11.1
 #define SunDiskSize 1
 #define SunDisk Vanilla //[Vanilla Custom]
@@ -27,7 +27,7 @@ void main() {
 	dist /= 1;
 
 
-		    suncolor.rgb *= (1.0f - dist) /SunDiskSize;
+		    suncolor.rgb *= (2.0f - dist) /SunDiskSize;
 /* DRAWBUFFERS:0 */
 	gl_FragData[0] = suncolor; //gcolor
 }

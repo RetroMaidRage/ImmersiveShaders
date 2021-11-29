@@ -8,33 +8,22 @@ varying vec2 texcoord;
 uniform ivec2 eyeBrightnessSmooth;
 uniform ivec2 eyeBrightness;
 uniform float frameTimeCounter;
-const float eyeBrightnessHalflife = 10.0f;
+const float eyeBrightnessHalflife = 5.0f;
 #define AutoExpsoure
-
-float TimeMidnight = ((clamp(frameTimeCounter, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(frameTimeCounter, 23000.0, 24000.0) - 23000.0) / 1000.0);
-
+#define exposureAmountSky 2.5
+#define exposureAmountBlock 0.25
 float eyeAdaptY = eyeBrightnessSmooth.y / 240.0; //sky
 float eyeAdaptX = eyeBrightnessSmooth.x / 180.0; //block
 
 float Auto_ExpsoureY() { //sky
-
-	const float exposureAmount = 2.5;
-
 	float aE_lightmap	= 1.0 - eyeAdaptY;
-				aE_lightmap = mix(aE_lightmap, 1.0, pow(TimeMidnight, 2.5));
-
-	return 1.0 + aE_lightmap * exposureAmount;
+	return 1.0 + aE_lightmap * exposureAmountSky;
 
 }
 
 float Auto_ExpsoureX() { //block
-
-	const float exposureAmount = 0.25;
-
 	float aE_lightmap	= 1.0 - eyeAdaptX;
-				aE_lightmap = mix(aE_lightmap, 1.0, pow(TimeMidnight, 2.5));
-
-	return 1.0 + aE_lightmap * exposureAmount;
+	return 1.0 + aE_lightmap * exposureAmountBlock;
 
 }
 void main() {

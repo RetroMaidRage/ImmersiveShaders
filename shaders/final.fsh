@@ -84,6 +84,8 @@ uniform float frameTimeCounter;
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
 
+
+
    mat4 ditherr = mat4(
       0,       0.5,    0.125,  0.625,
       0.75,    0.25,   0.875,  0.375,
@@ -164,7 +166,7 @@ vec2 RainDropCalc(vec2 p) {
 
 void main() {
     vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
-	vec4 color = texture2D(SkyRenderingType, texcoord.st);
+	vec4 color = texture2D(colortex0, texcoord.st);
   vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
   vec3 clipPos = screenPos * 2.0 - 1.0;
   vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
@@ -353,7 +355,7 @@ colorGR += sample;
 #endif
 
 #ifdef TONEMAPPING
-color.rgb = TonemappingType(color.rgb)*GAMMA;
+color.rgb = TonemappingType(color.rgb);
 #endif
 
 #ifdef Vignette

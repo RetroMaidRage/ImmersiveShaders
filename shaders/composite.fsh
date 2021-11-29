@@ -6,6 +6,7 @@
 #include "/files/filters/distort2.glsl"
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
+#include "/files/tonemaps/tonemap_uncharted.glsl"
 
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D colortex0;
@@ -41,7 +42,9 @@ uniform float heightScale;
 uniform float rainStrength;
 uniform sampler2D gdepth;
 uniform sampler2D gaux1;
+uniform sampler2D gcolor;
 flat in int water;
+varying vec4 vertexpos;
 //--------------------------------------------CONST------------------------------------------
 
 
@@ -68,7 +71,8 @@ const float ambientOcclusionLevel = 0.0f;
 #define VL_STEPS 12
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
-
+#define GammaType OldGamma //[OldGamma NewGamma]
+//#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
 
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -245,7 +249,11 @@ vec3 viewToShadow(vec3 viewPos) {
 ////////////////////////////////////////////////////////////////////////////////////////
 void main(){
 
-    vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(2.2f));
+float NewGamma = 1.0f;
+float OldGamma = 2.2f;
+
+    vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaType));
+
 
     float Depth = texture2D(depthtex0, TexCoords).r;
     if(Depth == 1.0f){
@@ -300,7 +308,7 @@ float ShadowOn = NdotL;
 float ShadowOff = 0.25;
 
 #ifdef VanillaAmbientOcclusion
-const float ambientOcclusionLevel = 1.0f;
+const float ambientOcclusionLevel = 0.5f;
 #endif
  float depthh = texture2D(depthtex0, texcoord).x; //Sample depth buffer
 vec3 screenPos = vec3(texcoord, texture2D(depthtex, texcoord).r);
@@ -317,13 +325,8 @@ vec3 viewPos = tmp.xyz / tmp.w;
 
  //View space position
 
-
-    vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
+  vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
     vec3 DiffuseAndSpecular = Diffuse + specular;
-
-
-
-
 
     gl_FragData[0] = vec4(OUTPUT, 1.0f);
 
