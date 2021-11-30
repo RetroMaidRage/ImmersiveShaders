@@ -415,7 +415,8 @@ float fogDistance = length(world_position.y)/GroundScreenSpaceFogDistance;
 vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDestiny;
     if (isTerrain) color.rgb += colorfog/6;
 #endif
-
+//color = pow(color, vec4(1.0/2.2));
+// color = 1.0 - exp(-1.0 * color);
 
 float desaturationFactor = (rainStrength-0.2);
 gl_FragColor = vec4( color.rgb , 1.0 );

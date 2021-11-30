@@ -33,7 +33,7 @@ void main() {
 //	color *= texture2D(lightmap, lmcoord);
 //	vec4 Vanilla = texture2D(texture, texcoord) * glcolor;
 
-	vec4 cwater = vec4(1.5)*glcolor*color;
+	vec4 cwater = vec4(2.0)*glcolor*color;
 	vec3 fragpos = vec3(texcoord.st, texture2D(depthtex2, texcoord.st).r);
 	fragpos = nvec3(gbufferProjectionInverse * nvec4(fragpos * 2.0 - 1.0));
 	vec3 normal = texture2D(gnormal, texcoord.st).rgb * 2.0 - 1.0;

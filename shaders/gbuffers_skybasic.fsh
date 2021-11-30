@@ -27,7 +27,7 @@ vec3 calcSkyColor(vec3 pos) {
 	skycol.g = SKY_COLOR_GREEN;
 	skycol.b = SKY_COLOR_BLUE;
 	vec3 OtherSkyColor = mix(skyColor.rgb, fogColor, skycol);
-	return interpolateSmooth3(mix(OtherSkyColor, fogColor, fogify(max(upDot, 0.0), SKY_SKATTERING)));
+	return mix(OtherSkyColor, fogColor, fogify(max(upDot, 0.0), SKY_SKATTERING));
 }
 
 

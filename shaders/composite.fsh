@@ -249,7 +249,7 @@ vec3 viewToShadow(vec3 viewPos) {
 ////////////////////////////////////////////////////////////////////////////////////////
 void main(){
 
-float NewGamma = 1.0f;
+float NewGamma = 1.8f;
 float OldGamma = 2.2f;
 
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaType));
@@ -308,7 +308,7 @@ float ShadowOn = NdotL;
 float ShadowOff = 0.25;
 
 #ifdef VanillaAmbientOcclusion
-const float ambientOcclusionLevel = 0.5f;
+const float ambientOcclusionLevel = 1.0f;
 #endif
  float depthh = texture2D(depthtex0, texcoord).x; //Sample depth buffer
 vec3 screenPos = vec3(texcoord, texture2D(depthtex, texcoord).r);

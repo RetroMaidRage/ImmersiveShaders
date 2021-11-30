@@ -133,3 +133,7 @@ float simplex2D(vec2 p ){
 
     return dot(n,h)*140.;
 }
+
+float getnoise(vec2 pos) {
+	return abs(fract(sin(dot(pos ,vec2(18.9898f,28.633f))) * 4378.5453f));
+}
