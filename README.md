@@ -1,7 +1,7 @@
 # ImmersiveShaders
 A minecraft shaderpack
 - !! Shader is not yet claimed for release or distribution !!
-- Current Version: 0.7b
+- Current Version: 0.8pre
 ![Alt text](/screenshots/2021-11-30_20.53.21.png?raw=true "Optional Title")
 # Features & Functions
 >You can setup all values/functions.
