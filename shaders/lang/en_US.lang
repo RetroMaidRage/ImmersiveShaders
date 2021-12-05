@@ -1,5 +1,6 @@
 screen.Misc=§cMisc
 screen.Credits=§fDeveloped §fby §6Retro§cMaid§bRage
+
 profile.Default = §fDefault
 profile.Lite = §8Lite
 profile.Low = §7Low
@@ -11,5 +12,9 @@ profile.Ultra+ = §6Ultra§c+
 
 value.ColorSettings.Summertime = §6Summer§atime
 value.ColorSettings.Default = §eDefault
+
+option.DISORT_THREASHOLD=ShadowSmooth
+
+
 
 SUNRAYS SUNRAYS_TYPE SR_Color_Type SUNRAYS_DECAY SUNRAYS_LENGHT SUNRAYS_BRIGHTNESS SUNRAYS_SAMPLES SUNRAYS_COLOR_RED SUNRAYS_DITHER

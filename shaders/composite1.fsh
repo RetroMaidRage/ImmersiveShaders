@@ -72,10 +72,10 @@ void main() {
 
     #ifdef CustomFog
     if (isTerrain) color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * fogDistance / far, 1.0));
-    #endif
+
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * rainStrength / far, 1.0));
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
-
+    #endif
 
     gl_FragData[0] = vec4(color, 1.0);
 

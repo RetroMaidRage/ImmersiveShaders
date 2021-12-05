@@ -73,9 +73,10 @@ float cloudFinalNoise2 = float(mix(cloudFinalNoise, cloudPreFinalnoise2, cloudPr
 
 
     vec4 cloudColor = texture2D(gaux3, vec2(0.5));
+
 		color.r = (color.r*2);
-			color.g = (color.g*2);
-			color.b = (color.b*2);
+			color.g = (color.g*3);
+			color.b = (color.b*5);
 
   color = color / (color + 35.2) * (1.0+2.0);
     Clouds = mix(color.rgb, cloudColor.rgb, cloudFinalNoise2);

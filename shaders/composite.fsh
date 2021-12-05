@@ -71,7 +71,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define VL_STEPS 12
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
-#define GammaType OldGamma //[OldGamma NewGamma]
+#define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
 
 float timefract = worldTime;
@@ -252,7 +252,7 @@ void main(){
 float NewGamma = 1.8f;
 float OldGamma = 2.2f;
 
-    vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaType));
+    vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
 
 
     float Depth = texture2D(depthtex0, TexCoords).r;
@@ -310,20 +310,6 @@ float ShadowOff = 0.25;
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif
- float depthh = texture2D(depthtex0, texcoord).x; //Sample depth buffer
-vec3 screenPos = vec3(texcoord, texture2D(depthtex, texcoord).r);
-vec3 clipPos = screenPos * 2.0 - 1.0;
-   vec3 clip_position = vec3(texcoord, depthh) * 2.0 - 1.0; //Clip space position
-vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
-vec3 viewPos = tmp.xyz / tmp.w;
- vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
-
- float depth = texture2D(depthtex0, texcoord).x; //Sample depth buffer
-
-    //Positions
-
-
- //View space position
 
   vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
     vec3 DiffuseAndSpecular = Diffuse + specular;
