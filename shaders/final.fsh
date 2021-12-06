@@ -44,7 +44,7 @@ uniform float frameTimeCounter;
 #define SkyRenderingType composite //[colortex0 composite]
 #define SUNRAYS_DECAY 0.90 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
 #define SUNRAYS_LENGHT 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
-#define SUNRAYS_BRIGHTNESS 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
+#define SUNRAYS_BRIGHTNESS 0.3 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
 #define SUNRAYS_SAMPLES 24 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
 #define SUNRAYS_COLOR_RED 3.0 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define SUNRAYS_TYPE Godrays //[Godrays Crespecular]
@@ -80,6 +80,9 @@ uniform float frameTimeCounter;
 #define fogDensitySunset 1.2 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 //#define FilmGrain
 #define FilmGrainStrenght 10 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+
+//#define CinematicBorder
+#define CinematicBorderIntense 0.05  //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
@@ -191,7 +194,7 @@ void main() {
     previousPosition = gbufferPreviousModelView * previousPosition;
     previousPosition = gbufferPreviousProjection * previousPosition;
     previousPosition /= previousPosition.w;
-
+//---------------------------------------------FUNCTIONS------------------------------------------------
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
 
@@ -214,15 +217,12 @@ void main() {
     }
   }
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef RadialBlur
 const int nsamples = 10;
   //vec2 center = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
  float blurStart = 1.0;
    float blurWidth = 0.1;
-
-
-
 
   // uv -= center;
    float precompute = blurWidth * (1.0 / float(nsamples - 1));
@@ -234,12 +234,10 @@ const int nsamples = 10;
        color3 += texture(colortex0, uv * scale);
    }
 
-
    color3 /= float(nsamples);
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef MOTIONBLUR
-
 
 		vec2 velocity = (currentPosition - previousPosition).st * 0.007 * MOTIONBLUR_AMOUNT;
 		velocity = velocity;
@@ -250,28 +248,23 @@ const int nsamples = 10;
 			velocity = vec2(0,0);
 		}
 
-
 		vec2 coord = texcoord.st + velocity;
-
 
 		for (int i = 0; i < 8; ++i, coord += velocity) {
 			if (coord.s > 1.0 || coord.t > 1.0 || coord.s < 0.0 || coord.t < 0.0) {
 				break;
 			}
 
-
 			color += texture2D(composite, coord);
 			++samples;
-
 		}
 			color = (color/1.0)/samples;
 		}
 
-
-
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
   #ifdef SUNRAYS
+
   float phi = 1.618;
     float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
      float jitter = fract(worldTime + interleavedGradientNoise());
@@ -325,10 +318,7 @@ colorGR += sample;
                 color = SR_Color_Type;
           }
   #endif
-
-
-
-
+//------------------------------------------------------------------------------------------------------------------
   #ifdef BLOOM
   	int j;
   	int ii;
@@ -346,7 +336,7 @@ colorGR += sample;
       sum = sum / vec4(gaux1);
   		color += sum*sum*0.012;
   #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef CROSSPROCESS
   color.r = (color.r*COLORCORRECT_RED);
     color.g = (color.g*COLORCORRECT_GREEN);
@@ -354,15 +344,15 @@ colorGR += sample;
 
   color = color / (color + 2.2) * (1.0+2.0);
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef TONEMAPPING
 color.rgb = TonemappingType(color.rgb);
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef Vignette
 VignetteColor(color.rgb);
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef ScreenSpaceRain
 if (rainStrength == 1.0){
 	vec3 raintex = texture(noisetex,vec2(uv.x*2.0,uv.y*0.1+frameTimeCounter*0.085)).rgb/2.0;
@@ -372,7 +362,7 @@ if (rainStrength == 1.0){
   color /=1.2;
 }
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef FilmGrain
 float invLum = clamp(1.0 - dot(vec3(0.299,0.587,0.114), color.rgb), 0.0, 1.0);
 float seed = (uv.x + .0) * (uv.y + 4.0) * (mod(frameTimeCounter,10.0) + 12342.876);
@@ -382,15 +372,15 @@ float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
 vec3 grain = vec3(grainR, grainG, grainB);
        color.rgb += grain/FilmGrainStrenght;
  #endif
+//------------------------------------------------------------------------------------------------------------------
+//vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
 
-vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
+//vec3 NfogColor = fogColor*1.5;
 
-vec3 NfogColor = fogColor*1.5;
-
-vec3 Summertime =  NfogColor;
-Summertime.r = NfogColor.r*2;
-Summertime /=10;
-
+//vec3 Summertime =  NfogColor;
+//Summertime.r = NfogColor.r*2;
+//Summertime /=10;
+//------------------------------------------------------------------------------------------------------------------
 #ifdef RainDrops
 if (rainStrength == 1.0){
   uv += RainDropCalc(gl_FragCoord.xy);
@@ -398,7 +388,7 @@ color += texture2D(colortex0, uv);
 color /=1.2;
 }
 #endif
-
+//------------------------------------------------------------------------------------------------------------------
 #ifdef GroundScreenSpaceFog
     float depthfog = texture2D(depthtex0, texcoord.st).r;
 bool isTerrain = depthfog < 1.0;
@@ -415,10 +405,20 @@ float fogDistance = length(world_position.y)/GroundScreenSpaceFogDistance;
 vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDestiny;
     if (isTerrain) color.rgb += colorfog/GroundScreenSpaceFogStrenght;
 #endif
-//color = pow(color, vec4(1.0/2.2));
 // color = 1.0 - exp(-1.0 * color);
+//------------------------------------------------------------------------------------------------------------------
+#ifdef CinematicBorder
+float transparent = 10.0;
+vec4 BackColor = vec4(0.0);
 
+	if (texcoord.t > 0.925) BackColor.rgba = vec4(-CinematicBorderIntense,-CinematicBorderIntense,-CinematicBorderIntense,transparent);
+
+	if (texcoord.t < 0.075) BackColor.rgba = vec4(-CinematicBorderIntense,-CinematicBorderIntense,-CinematicBorderIntense,transparent);
+
+color +=BackColor;
+#endif
+//------------------------------------------------------------------------------------------------------------------
 float desaturationFactor = (rainStrength-0.2);
-gl_FragColor = vec4( color.rgb , 1.0 );
+gl_FragColor = color;
 
 }

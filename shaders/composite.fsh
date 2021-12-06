@@ -60,7 +60,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define ColShadowBoost 7 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 #define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.11 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
-#define GrassShadow ShadowOn //[ShadowOn ShadowOff]
+#define GrassShadow ShadowOff //[ShadowOn ShadowOff]
 #define ColorSettings Default //[Summertime Default]
 #define SkyColorType DynamicSkyColor //[DynamicSkyColor StaticSkyColor]
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
@@ -262,6 +262,7 @@ float OldGamma = 2.2f;
     }
 
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
+
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
   //  Normal = normalize(Normal * 211.0 - 1.0);
     vec3 LightmapColor = GetLightmapColor(Lightmap);
