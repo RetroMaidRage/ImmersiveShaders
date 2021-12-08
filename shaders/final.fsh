@@ -36,6 +36,14 @@ uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
 uniform vec3 skyColor;
 uniform float frameTimeCounter;
+uniform int isEyeInWater;
+
+/*
+const int colortex0Format = RGBA16F;
+const int colortex1Format = RGB16;
+const int colortex2Format = RGB16;
+*/
+
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
@@ -84,6 +92,8 @@ uniform float frameTimeCounter;
 //#define CinematicBorder
 #define CinematicBorderIntense 0.05  //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
 
+//#define LensFlare
+
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
@@ -116,7 +126,7 @@ uniform float frameTimeCounter;
 
 
 
-
+//------------------------------------------------------------------------------------------------------------------
    void VignetteColor(inout vec3 color) {
    float dist = distance(texcoord.st, vec2(0.5)) * 2.0;
    dist /= Vignette_Distance;
@@ -125,12 +135,7 @@ uniform float frameTimeCounter;
 
    color.rgb *= (1.0f - dist) /Vignette_Strenght;
    }
-
-void RainDrop(inout vec3 color){
-  color.rgb *= 1.0f;
-
-}
-
+//------------------------------------------------------------------------------------------------------------------
 vec2 RainDropCalc(vec2 p) {
 
     p += simplex2D(p*0.1) * 3.; // distort drops
@@ -167,15 +172,52 @@ vec2 RainDropCalc(vec2 p) {
 
     return drop * dropPos + trailPos * trail;
 }
+//------------------------------------------------------------------------------------------------------------------
+vec4 lensFlare(in vec2 coord)
+{
+  //https://www.shadertoy.com/view/ls3czM
+  int uGhosts = 5; // number of ghost samples
+float uGhostDispersal = 0.6; // dispersion facto
+      vec2 texcoordd = -coord + vec2(1.0);
+      vec2 texelSize = vec2(1. / viewWidth, 1. / viewHeight);
+
+   // ghost vector to image centre:
+      vec2 ghostVec = (vec2(0.5) - texcoordd) * uGhostDispersal;
+
+   // sample ghosts:
+      vec4 result = vec4(0.0);
+      for (int i = 0; i < uGhosts; ++i) {
+         vec2 offset = fract(texcoordd + ghostVec * float(i));
+
+         float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
+         weight = pow(1.0 - weight, 10.0);
+
+         result += texture(gaux1, offset) * weight; //need noise+blur
+      }
+
+    return result;
+}
+
+//-------------------------------------------------MAIN------------------------------------------------------
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+    vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
+vec3 SunPosNormal = normalize(sunPosition);
+vec2 SunPosNormalVec2 = normalize(sunPosition.xy);
+
+vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
+tpos = vec4(tpos.xyz/tpos.w,1.0);
+vec2 LightPos = tpos.xy/tpos.z;
+  // lightPoss = (lightPoss + 1.0f)/2.0f;
+
 	vec4 color = texture2D(colortex0, texcoord.st);
+
   vec3 screenPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
   vec3 clipPos = screenPos * 2.0 - 1.0;
   vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
   vec3 viewPos = tmp.xyz / tmp.w;
   vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
+
   float depth = texture2D(depthtex1, texcoord.st).x;
   float noblur = texture2D(gaux1, texcoord.st).r;
     if (depth > 0.9999999) {
@@ -265,14 +307,11 @@ const int nsamples = 10;
 //------------------------------------------------------------------------------------------------------------------
   #ifdef SUNRAYS
 
-  float phi = 1.618;
-    float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
-     float jitter = fract(worldTime + interleavedGradientNoise());
+  //float phi = 1.618;
+  //  float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
+  //   float jitter = fract(worldTime + interleavedGradientNoise());
 
-  		vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
-  		tpos = vec4(tpos.xyz/tpos.w,1.0);
-  		vec2 pos1 = tpos.xy/tpos.z;
-  		vec2 Godrays = pos1*0.5+0.5;
+  		vec2 Godrays = LightPos*0.5+0.5;
       float threshold = 0.99 * far;
 //
       vec2 Crespecular = sunPosition.xy / -sunPosition.z;
@@ -419,6 +458,15 @@ color +=BackColor;
 #endif
 //------------------------------------------------------------------------------------------------------------------
 float desaturationFactor = (rainStrength-0.2);
+#ifdef LensFlare
+
+ if (isEyeInWater > 0.9) {
+
+ 	} else {
+ color += lensFlare(uv) * 1.0;
+}
+
+#endif
 gl_FragColor = color;
 
 }

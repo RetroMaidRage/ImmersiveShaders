@@ -12,6 +12,13 @@ uniform int worldTime;
 uniform vec3 fogColor;
 uniform float rainStrength;
 flat in int water;
+
+/*
+const int colortex0Format = RGBA16F;
+const int colortex1Format = RGB16;
+const int colortex2Format = RGB16;
+*/
+
 //--------------------------------------------DEFINE------------------------------------------
 #define CustomFog
 #define fogSetting customFogColor//[skyColor fogColor]
@@ -71,6 +78,9 @@ void main() {
 #endif
 
     #ifdef CustomFog
+
+
+        float fogleght = length(texcoord.st);
     if (isTerrain) color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * fogDistance / far, 1.0));
 
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * rainStrength / far, 1.0));

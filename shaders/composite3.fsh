@@ -1,5 +1,9 @@
 #version 120
-
+/*
+const int colortex0Format = RGBA16F;
+const int colortex1Format = RGB16;
+const int colortex2Format = RGB16;
+*/
 uniform sampler2D gcolor;
 uniform vec3 sunPosition;
 uniform sampler2D gaux1;
@@ -30,7 +34,7 @@ void main() {
 vec3 color = texture2D(gcolor, texcoord).rgb;
 #ifdef AutoExpsoure
 color.rgb = color.rgb * Auto_ExpsoureY();
-color.rgb = color.rgb * Auto_ExpsoureX();
+//color.rgb = color.rgb * Auto_ExpsoureX();
 #endif
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }

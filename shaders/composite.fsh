@@ -45,13 +45,19 @@ uniform sampler2D gaux1;
 uniform sampler2D gcolor;
 flat in int water;
 varying vec4 vertexpos;
+varying vec4 shadowPos;
 //--------------------------------------------CONST------------------------------------------
 
+/*
+const int colortex0Format = RGBA16F;
+const int colortex1Format = RGB16;
+const int colortex2Format = RGB16;
+*/
 
 const float sunPathRotation = -40.0f;
 const int shadowMapResolution = 2048;
 const int noiseTextureResolution = 256;
-const float shadowDistance = 80.0f;
+const float shadowDistance = 100.0f;
 const float ambientOcclusionLevel = 0.0f;
 
 //--------------------------------------------DEFINE------------------------------------------
@@ -197,61 +203,68 @@ vec3 GetShadow(float depth) {
     return ShadowAccum;
 }
 
-vec3 viewToShadow(vec3 viewPos) {
-    vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
-         shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
-         shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
 
-        // /!\ Always place the matrix before the vector in a matrix multiplication
 
-    return vec3(DistortPosition(shadowPos.xy), shadowPos.z); // Distort the XY coordinates (not the Z!!) using the function you probably already have
+float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
+  vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
+       shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
+     shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
+   float sampleShadow = texture2D(shadowtex0, shadowPos.xy).r;
+   return sampleShadow;
 }
 
-//float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
-  //vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
-    //   shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
-    //   shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
-  //  float sampleShadow = texture2D(shadowtex0, shadowPos.xy).r;
-  //  return sampleShadow;
-//}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef vl
+float volumetric_light(vec3 viewPos1, vec4 shadowPos)
+{
+    //Settings
+    int SAMPLES = 2; //That's our "quality" setting
 
-//feet position at input viewPos
-//float volumetric_light(vec3 viewPos)
-//{
-//    int SAMPLES = 128;
-//    float accum_density = 10.0;
+    //Start and end position
+    //As we are going to sample shadowmap, and raymarch from sun to player pos, we want to convert our ray start and end positions to shadow
+    //projection space.
+    //We will use matrices for that. [World -> Shadow View -> Shadow Projection]
+    vec4 start_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 end_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(viewPos1, 1.0);
 
-  //  vec4 start_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(0.0, 0.0, 0.0, 1.0);
-  //  vec4 end_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(viewPos, 1.0);
+    //Ray length - Length of the ray. As my english is veeery poor, i'm leaving this to more experienced devs.
+    //To me - it has to be like that to work properly lmao. With 1.0 / float(SAMPLES) I had issues
+    float ray_length = length(end_position.xyz - start_position.xyz) / float(SAMPLES);
 
-  //  float ray_length = length(end_position.xyz - start_position.xyz) / float(SAMPLES);
-  //  vec3 ray_increment = normalize(end_position.xyz - start_position.xyz) * ray_length;
-  //  vec3 ray_position = start_position.xyz;
+    //Ray increment - aka our 'ray step'. Each iteration in our loop means moving towards ray direction (well, end position)
+    vec3 ray_increment = normalize(end_position.xyz - start_position.xyz) * ray_length;
 
+    //Ray position (We start at 0.0,0.0,0.0)
+    //Try to include dither - this will help with banding artifacts at low sample count :slight_smile:
+    //It's simple, you will figure out how to do that
+    vec3 ray_position = start_position.xyz;
 
-  //  for(int i = 0; i < SAMPLES; ++i)
-  //  {
+    //Accumulated density - We should zero-initialize it
+    float accum_density = 0.0;
 
-  //      vec3 shadow_position = distort(ray_position.xyz) * 0.5 + 0.5;
+    //Main loop - AKA our ray marches in B [end position] direction, and collects density [shadow map] samples
+    for(int i = 0; i < SAMPLES; ++i)
+    {
+        //Distort ray position and convert it into screen space
+        vec3 shadow_position = distort(ray_position.xyz) * 0.5 + 0.5;
 
-    //    accum_density += calculate_shadow(shadowtex0, shadow_position);
+        //Sample shadow map [You have this function somewhere, take a look at it. It's not colored shadows!!!]
+        accum_density += calculate_shadow(shadowtex0, shadow_position);
 
-    //    ray_position += ray_increment;
-  //  }
+        //Raymarch, take a step in B [end position] direction
+        ray_position += ray_increment;
+    }
+    //Divide by sample count
+    accum_density /= float(SAMPLES);
 
-  //  accum_density /= float(SAMPLES);
-  //  return accum_density*0.1;
-//}
+    //Output :slight_smile:
+    return accum_density*0.03;
+}
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////
 void main(){
-
-float NewGamma = 1.8f;
-float OldGamma = 2.2f;
-
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
 
 
@@ -264,7 +277,7 @@ float OldGamma = 2.2f;
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
 
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
-  //  Normal = normalize(Normal * 211.0 - 1.0);
+
     vec3 LightmapColor = GetLightmapColor(Lightmap);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
 
@@ -311,10 +324,14 @@ float ShadowOff = 0.25;
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif
+vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
+vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
+vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
+vec3 viewPos1 = tmp1.xyz / tmp1.w;
 
   vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
     vec3 DiffuseAndSpecular = Diffuse + specular;
-
+//Diffuse += volumetric_light(viewPos1, shadowPos);
     gl_FragData[0] = vec4(OUTPUT, 1.0f);
 
 }
