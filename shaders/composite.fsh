@@ -46,6 +46,7 @@ uniform sampler2D gcolor;
 flat in int water;
 varying vec4 vertexpos;
 varying vec4 shadowPos;
+varying vec3 pos;
 //--------------------------------------------CONST------------------------------------------
 
 /*
@@ -92,6 +93,11 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 
+
+    float pixeldepth = texture2D(depthtex0,texcoord.xy).x;
+
+    float matflag = texture2D(gaux1,texcoord.xy).g;
+    int iswater = int(matflag > 0.04 && matflag < 0.07);
 
 
 float AdjustLightmapTorch(in float torch) {

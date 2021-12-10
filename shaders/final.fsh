@@ -192,7 +192,9 @@ float uGhostDispersal = 0.6; // dispersion facto
          float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
          weight = pow(1.0 - weight, 10.0);
 
-         result += texture(gaux1, offset) * weight; //need noise+blur
+vec4 lensflarealbedo = texture(colortex0, offset);
+
+         result += lensflarealbedo * weight; //need noise+blur
       }
 
     return result;
@@ -218,24 +220,7 @@ vec2 LightPos = tpos.xy/tpos.z;
   vec3 viewPos = tmp.xyz / tmp.w;
   vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
 
-  float depth = texture2D(depthtex1, texcoord.st).x;
-  float noblur = texture2D(gaux1, texcoord.st).r;
-    if (depth > 0.9999999) {
-    depth = 1;
-    }
-    if (depth < 1.9999999) {
-    vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * depth - 1.0, 1.0);
 
-    vec4 fragposition = gbufferProjectionInverse * currentPosition;
-    fragposition = gbufferModelViewInverse * fragposition;
-    fragposition /= fragposition.w;
-    fragposition.xyz += cameraPosition;
-
-    vec4 previousPosition = fragposition;
-    previousPosition.xyz -= previousCameraPosition;
-    previousPosition = gbufferPreviousModelView * previousPosition;
-    previousPosition = gbufferPreviousProjection * previousPosition;
-    previousPosition /= previousPosition.w;
 //---------------------------------------------FUNCTIONS------------------------------------------------
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
@@ -280,7 +265,25 @@ const int nsamples = 10;
 #endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef MOTIONBLUR
+float depth = texture2D(depthtex1, texcoord.st).x;
+float noblur = texture2D(gaux1, texcoord.st).r;
+  if (depth > 0.9999999) {
+  depth = 1;
+  }
+  if (depth < 1.9999999) {
 
+vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * depth - 1.0, 1.0);
+
+vec4 fragposition = gbufferProjectionInverse * currentPosition;
+fragposition = gbufferModelViewInverse * fragposition;
+fragposition /= fragposition.w;
+fragposition.xyz += cameraPosition;
+
+vec4 previousPosition = fragposition;
+previousPosition.xyz -= previousCameraPosition;
+previousPosition = gbufferPreviousModelView * previousPosition;
+previousPosition = gbufferPreviousProjection * previousPosition;
+previousPosition /= previousPosition.w;
 		vec2 velocity = (currentPosition - previousPosition).st * 0.007 * MOTIONBLUR_AMOUNT;
 		velocity = velocity;
 

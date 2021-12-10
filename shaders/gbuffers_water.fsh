@@ -1,10 +1,39 @@
 #version 120
+varying vec4 texcoord;
+uniform sampler2D gcolor;
+uniform sampler2D depthtex0;
+
+uniform vec3 sunPosition;
+
+uniform float worldTime;
+uniform float rainStrength;
+uniform float aspectRatio;
+uniform float near;
+uniform float far;
+uniform sampler2D gaux1;
+uniform vec3 fogColor;
+uniform vec3 shadowLightPosition;
+uniform float displayWidth;
+uniform sampler2D noisetex;
+uniform sampler2D colortex0;
+varying vec3 sunVector;
+uniform float viewWidth;
+uniform float viewHeight;
+
+uniform mat4 gbufferModelViewInverse;
+uniform vec3 cameraPosition;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferPreviousProjection;
+uniform vec3 previousCameraPosition;
+uniform vec3 skyColor;
+uniform float frameTimeCounter;
+uniform int isEyeInWater;
 
 uniform sampler2D lightmap;
 uniform sampler2D texture;
 uniform sampler2D depthtex2;
 varying vec2 lmcoord;
-varying vec2 texcoord;
+
 varying vec4 glcolor;
 uniform sampler2D gnormal;
 uniform mat4 gbufferProjectionInverse;
@@ -15,7 +44,7 @@ uniform sampler2D composite;
 
 
 void main() {
-	vec4 color = texture2D(texture, texcoord);
+	vec4 color = texture2D(texture, texcoord.st);
 //	color *= texture2D(lightmap, lmcoord);
 //	vec4 Vanilla = texture2D(texture, texcoord) * glcolor;
 vec4 Texture = color;
