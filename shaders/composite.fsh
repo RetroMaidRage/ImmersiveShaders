@@ -47,6 +47,9 @@ flat in int water;
 varying vec4 vertexpos;
 varying vec4 shadowPos;
 varying vec3 pos;
+in vec2 textureCoordinates;
+uniform sampler2D gnormal;
+uniform mat4 gbufferModelView;
 //--------------------------------------------CONST------------------------------------------
 
 /*
@@ -68,7 +71,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
-#define ColorSettings Default //[Summertime Default]
+#define ColorSettings Summertime //[Summertime Default]
 #define SkyColorType DynamicSkyColor //[DynamicSkyColor StaticSkyColor]
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 
@@ -93,18 +96,60 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 
+    vec3 localToScreen(vec3 pos) {
+      vec3 data = mat3(gbufferProjection) * pos;
+      data += gbufferProjection[3].xyz;
+      return ((data.xyz / -pos.z) / 2.0 + 0.5).xyz;
+    }
 
-    float pixeldepth = texture2D(depthtex0,texcoord.xy).x;
+    vec3 screenToLocal(vec3 posDepth) {
+      vec4 result = vec4(posDepth, 1.0) * 2.0 - 1.0;
+      result      = (gbufferProjectionInverse * result);
+      result /= result.w;
+      return result.xyz;
+    }
 
-    float matflag = texture2D(gaux1,texcoord.xy).g;
-    int iswater = int(matflag > 0.04 && matflag < 0.07);
+    vec3 raytraceScreen(vec3 screenPosition, vec3 localNormal) {
+    //  https://github.com/williambulin/SSR-Minecraft
+      vec3 startPosition  = screenToLocal(screenPosition);
+      vec3 startDirection = normalize(reflect(normalize(startPosition), localNormal));
+      vec3 endPosition    = startPosition + (startDirection * 200.0);
+      vec3 result         = vec3(0.0);
 
+      float minStep  = 0.01;  // clamp(0.00001, 0.001, distance(vec3(0.0), startPosition) / 100000.0)
+      float stepSize = 0.001;
+      for (float currentStep = 0.01; currentStep <= 1.0; currentStep += stepSize) {
+        vec3 currentPosition = mix(startPosition, endPosition, pow(currentStep, 1.0));
+        vec3 screenQuery     = localToScreen(currentPosition);
+        vec3 localQuery      = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
+        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
+          break;
+
+        if ((currentPosition.z - localQuery.z) <= 0.0) {
+          result = currentPosition;
+          break;
+        }
+      }
+
+      vec3 refinementDirection = startDirection / 1.0;
+      for (int refinementStep = 0; refinementStep < 100; ++refinementStep) {
+        vec3 screenQuery = localToScreen(result);
+        vec3 localQuery  = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
+        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
+          break;
+
+        result += refinementDirection * (((result.z - localQuery.z) <= 0.0) ? -1.0 : 1.0);
+        refinementDirection /= 2.0;
+      }
+
+      return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
+    }
 
 float AdjustLightmapTorch(in float torch) {
 
 
        float K =LIGHT_STRENGHT;
-       float P = 10.06f;
+       float P = 5.06f;
         return K * pow(torch, P);
 }
 
@@ -335,9 +380,21 @@ vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
 vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
 vec3 viewPos1 = tmp1.xyz / tmp1.w;
 
+  vec3  colorrt      = texture2D(gcolor, textureCoordinates).rgb;
+  vec3  worldNormal = texture2D(gnormal, textureCoordinates).xyz * 2.0 - 1.0;
+    float depth_rt     = texture2D(depthtex0, textureCoordinates).g;
+
+  //if (distance(vec3(-1.0), worldNormal) > 0.0) {
+  //  vec3 rt = raytraceScreen(vec3(textureCoordinates, depth_rt), normalize(mat3(gbufferModelViewInverse) * worldNormal));
+
+  //  colorrt   = mix(colorrt, texture2D(gcolor, rt.xy).rgb, rt.z * 0.75);
+//}
+
+
   vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
     vec3 DiffuseAndSpecular = Diffuse + specular;
+
 //Diffuse += volumetric_light(viewPos1, shadowPos);
-    gl_FragData[0] = vec4(OUTPUT, 1.0f);
+    gl_FragData[0] = vec4(OUTPUT, 1.0);
 
 }

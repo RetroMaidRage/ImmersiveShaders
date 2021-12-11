@@ -67,7 +67,7 @@ void main() {
     bool isTerrain = depth < 1.0;
 #ifdef WaterFog
     if (isEyeInWater == 1) {
-        color = mix(color, waterfogColor, min(GetDepthLinear(texcoord.st) * 2.3 / far, 1.0));
+        color = mix(color, waterfogColor, min(GetDepthLinear(texcoord.st) * 1.3 / far, 1.0));
     }
 #endif
 
@@ -83,7 +83,7 @@ void main() {
         float fogleght = length(texcoord.st);
     if (isTerrain) color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * fogDistance / far, 1.0));
 
-color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * rainStrength / far, 1.0));
+color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * (rainStrength*2) / far, 1.0));
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
     #endif
 

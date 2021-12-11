@@ -6,6 +6,7 @@
 #include "/files/tonemaps/tonemap_lottes.glsl"
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
+#include "/files/antialiasing/fxaa.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -26,8 +27,6 @@ uniform float displayWidth;
 uniform sampler2D noisetex;
 uniform sampler2D colortex0;
 varying vec3 sunVector;
-uniform float viewWidth;
-uniform float viewHeight;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 cameraPosition;
@@ -66,8 +65,9 @@ const int colortex2Format = RGB16;
 #define COLORCORRECT_GREEN 1.4 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define COLORCORRECT_BLUE 1.1 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define GAMMA 1.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+
 #define CROSSPROCESS
-#define ColorSettings Default //[Summertime Default]
+#define ColorSettings Summertime //[Summertime Default]
 
 #define Vignette
 #define Vignette_Distance 1.7 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -81,7 +81,7 @@ const int colortex2Format = RGB16;
 #define ScreenSpaceRain
 #define RainDrops
 #define GroundScreenSpaceFog
-#define GroundScreenSpaceFogDistance 2 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define GroundScreenSpaceFogDistance 8 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GroundScreenSpaceDestiny 4 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GroundScreenSpaceFogStrenght 8 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define fogDensityNight 1.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -94,18 +94,17 @@ const int colortex2Format = RGB16;
 
 //#define LensFlare
 
+#define RainDesaturation
+#define RainDesaturationFactor 0.3 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9]
+
+//#define Chromation_Abberation
+#define ChromaOffset 0.002 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+
+#define FXAA
+
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
-
-
-
-   mat4 ditherr = mat4(
-      0,       0.5,    0.125,  0.625,
-      0.75,    0.25,   0.875,  0.375,
-      0.1875,  0.6875, 0.0625, 0.5625,
-      0.9375,  0.4375, 0.8125, 0.3125
-   );
 
    float timefract = worldTime;
    float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -113,18 +112,10 @@ const int colortex2Format = RGB16;
    float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
    float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
-
-   #ifdef SUNRAYS
-
    const float GR_DECAY    = 1.0*SUNRAYS_DECAY;
    const float GR_DENSITY  = 1.0*SUNRAYS_LENGHT;
    const float GR_EXPOSURE = 1.0*SUNRAYS_BRIGHTNESS;
    const int GR_SAMPLES    = 1*SUNRAYS_SAMPLES;
-   #endif
-
-
-
-
 
 //------------------------------------------------------------------------------------------------------------------
    void VignetteColor(inout vec3 color) {
@@ -203,7 +194,7 @@ vec4 lensflarealbedo = texture(colortex0, offset);
 //-------------------------------------------------MAIN------------------------------------------------------
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
+    //vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
 vec3 SunPosNormal = normalize(sunPosition);
 vec2 SunPosNormalVec2 = normalize(sunPosition.xy);
 
@@ -220,8 +211,17 @@ vec2 LightPos = tpos.xy/tpos.z;
   vec3 viewPos = tmp.xyz / tmp.w;
   vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
 
-
 //---------------------------------------------FUNCTIONS------------------------------------------------
+#ifdef FXAA
+  color = ApplyFXAA(colortex0,texSize, uv);
+  #endif
+//------------------------------------------------------------------------------------------------------
+#ifdef Chromation_Abberation
+color.r = texture(colortex0, uv - ChromaOffset).r;
+  color.g = texture(colortex0, uv).g;
+    color.b = texture(colortex0, uv + ChromaOffset).b;
+    #endif
+//------------------------------------------------------------------------------------------------------
   #ifdef Gaussian_Blur
   float Pi = 6.28318530718; // Pi*2
 
@@ -241,6 +241,7 @@ vec2 LightPos = tpos.xy/tpos.z;
   for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
     {
   Blur += texture( colortex0, uv+vec2(cos(d),sin(d))*Radius*i);
+  color = Blur;
     }
   }
 #endif
@@ -310,9 +311,7 @@ previousPosition /= previousPosition.w;
 //------------------------------------------------------------------------------------------------------------------
   #ifdef SUNRAYS
 
-  //float phi = 1.618;
-  //  float dither2 = fract(fract(worldTime * (1.0 / phi)) + bayer128(gl_FragCoord.st));
-  //   float jitter = fract(worldTime + interleavedGradientNoise());
+
 
   		vec2 Godrays = LightPos*0.5+0.5;
       float threshold = 0.99 * far;
@@ -415,19 +414,11 @@ vec3 grain = vec3(grainR, grainG, grainB);
        color.rgb += grain/FilmGrainStrenght;
  #endif
 //------------------------------------------------------------------------------------------------------------------
-//vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 ) ) );
-
-//vec3 NfogColor = fogColor*1.5;
-
-//vec3 Summertime =  NfogColor;
-//Summertime.r = NfogColor.r*2;
-//Summertime /=10;
-//------------------------------------------------------------------------------------------------------------------
 #ifdef RainDrops
 if (rainStrength == 1.0){
   uv += RainDropCalc(gl_FragCoord.xy);
 color += texture2D(colortex0, uv);
-color /=1.2;
+color /=1.5;
 }
 #endif
 //------------------------------------------------------------------------------------------------------------------
@@ -460,7 +451,6 @@ vec4 BackColor = vec4(0.0);
 color +=BackColor;
 #endif
 //------------------------------------------------------------------------------------------------------------------
-float desaturationFactor = (rainStrength-0.2);
 #ifdef LensFlare
 
  if (isEyeInWater > 0.9) {
@@ -468,8 +458,19 @@ float desaturationFactor = (rainStrength-0.2);
  	} else {
  color += lensFlare(uv) * 1.0;
 }
-
 #endif
+//------------------------------------------------------------------------------------------------------------------
+#ifdef RainDesaturation
+float Fac = 0.0;
+if (rainStrength == 1){
+     Fac = RainDesaturationFactor;
+
+}
+vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 )));
+color = vec4( mix( color.rgb , gray , Fac) , 1.0 );
+#endif
+//-----------------------------------------------------OUTPUT------------------------------------------------------
+
 gl_FragColor = color;
 
 }

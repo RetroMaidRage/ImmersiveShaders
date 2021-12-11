@@ -4,6 +4,7 @@ const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
 */
+//--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D gcolor;
 uniform vec3 sunPosition;
 uniform sampler2D gaux1;
@@ -13,9 +14,11 @@ uniform ivec2 eyeBrightnessSmooth;
 uniform ivec2 eyeBrightness;
 uniform float frameTimeCounter;
 const float eyeBrightnessHalflife = 5.0f;
+//--------------------------------------------DEFINE------------------------------------------
 #define AutoExpsoure
 #define exposureAmountSky 2.5
 #define exposureAmountBlock 0.25
+
 float eyeAdaptY = eyeBrightnessSmooth.y / 240.0; //sky
 float eyeAdaptX = eyeBrightnessSmooth.x / 180.0; //block
 

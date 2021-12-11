@@ -1,5 +1,7 @@
 screen.Misc=§cMisc
 screen.Credits=§fDeveloped §fby §6Retro§cMaid§bRage
+screen.ChromationAbberation=Chromation Abberation
+screen.AntiAliasing=AntiAliasing
 
 profile.Default = §fDefault
 profile.Lite = §8Lite
@@ -14,7 +16,7 @@ value.ColorSettings.Summertime = §6Summer§atime
 value.ColorSettings.Default = §eDefault
 
 option.DISORT_THREASHOLD=ShadowSmooth
-
-
+option.Chromation_Abberation=ChromationAbberation
+option.ChromaOffset=Offset
 
 SUNRAYS SUNRAYS_TYPE SR_Color_Type SUNRAYS_DECAY SUNRAYS_LENGHT SUNRAYS_BRIGHTNESS SUNRAYS_SAMPLES SUNRAYS_COLOR_RED SUNRAYS_DITHER

@@ -1,7 +1,6 @@
 #version 120
 
 //--------------------------------------------UNIFORMS------------------------------------------
-attribute vec4 mc_Entity;
 attribute vec2 mc_midTexCoord;
 varying vec3 vworldpos;
 uniform float frameTimeCounter;
@@ -16,6 +15,9 @@ varying vec2 LightmapCoords;
 varying vec3 Normal;
 varying vec4 Color;
 varying vec4 glcolor;
+attribute vec3 mc_Entity;
+out float entityId;
+varying vec3 viewPos;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
 #define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
@@ -26,6 +28,9 @@ const float pi = 3.14f;
 float tick = frameTimeCounter;
 
 void main() {
+		viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	entityId = mc_Entity.x;
+	int blockId = int(entityId);
 		glcolor = gl_Color;
 texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
@@ -42,8 +47,8 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
 				 if (fy > 0.002) {
 	float displacement = 0.0;
-				 float wave = 0.05 * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
-											+ 0.05 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
+				 float wave = 0.085 * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
+											+ 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
 											displacement = clamp(wave, -fy, 1.0-fy);
 											vpos.y += displacement;
 	}}

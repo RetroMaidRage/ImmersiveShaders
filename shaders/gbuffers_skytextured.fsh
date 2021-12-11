@@ -1,12 +1,12 @@
 #version 120
-
+//--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D texture;
 varying vec2 texcoord;
 varying vec4 glcolor;
 uniform sampler2D gcolor;
 uniform sampler2D gaux1;
 uniform sampler2D colortex0;
-
+//--------------------------------------------DEFINE------------------------------------------
 #define sunColorRed 11.1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define sunColorGreen 7.4
 #define sunColorBlue 11.1
