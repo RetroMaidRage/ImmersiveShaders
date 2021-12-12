@@ -86,6 +86,7 @@ vec3 o = vec3(1.0);
 	vec3 SunVector = normalize(sunPosition+viewVec);
 	vec3 SunNormalise = normalize(sunPosition);
 	vec3 MoonVector = normalize(moonPosition+viewVec);
+	vec3 LightVector = normalize(moonPosition+viewVec);
 
 	float VectorSky = dot(shadowLightPosition, viewVec);
 
