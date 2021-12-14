@@ -2,9 +2,11 @@
 
 varying vec2 texcoord;
 varying vec4 glcolor;
+varying vec3 SkyPos;
 
 void main() {
 	gl_Position = ftransform();
 	texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 	glcolor = gl_Color;
+		SkyPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 }

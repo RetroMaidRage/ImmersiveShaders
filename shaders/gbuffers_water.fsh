@@ -57,11 +57,22 @@ varying vec3 normal;
 #define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //--------------------------------------------------------------------------------------
 
+float     GetDepthLinear(in vec2 coord) {
+   return 2.0f * near * far / (far + near - (2.0f * texture2D(depthtex0, coord).x - 1.0f) * (far - near));
+}
+
+float linearDepth(float depth){
+	return 2.0 * (near * far) / (far + near - (depth) * (far - near));
+}
+
+
+
+
 void main() {
 	int id = int(entityId + 0.5);
 
 	vec4 color = texture2D(texture, texcoord.st);
-vec4 Frensel =  vec4(1.7,1.0,1.0,1.0);
+vec4 Frensel =  vec4(1.0,1.0,1.0,1.0);
 vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
 vec4 fresnelColor =  FrenselTexture;
@@ -100,15 +111,25 @@ vec4 SpecularCustom= vec4(1.0, 1.0, 1.0, 1.0)*SpecularCustomStrenght;
 vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStrenght;
 
 
+vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);//vec3(0.1, 0.25, 0.4);
 
+float depth_solid = linearDepth(texture2D(depthtex0, texcoord.st).x);
+float depth_translucent = linearDepth(texture2D(depthtex1, texcoord.st).x);
 
+//Difference between solid and trans depth
+float dist_fog = distance(depth_solid, depth_translucent);
+
+//Exponential fog
+vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
+vec4 absorptionColor = vec4(absorption, 1.0);
 //--------------------------------------------------------------------------------------
 
 
-  vec4 output = mix(fresnelColor, cwater, frensel)+(SpecularAngle*SpecularTexture);
+  vec4 outputWater = mix(fresnelColor, cwater, frensel)+(SpecularAngle*SpecularTexture);
+	  vec4 outputIce = mix(fresnelColor, color, frensel)+(SpecularAngle*SpecularTexture);
 /* DRAWBUFFERS:0 */
 if (id == 35) {
-gl_FragData[0] = output; //gcolor
+gl_FragData[0] = outputWater; //gcolor
 }else{
-gl_FragData[0] = mix(fresnelColor, cwater, frensel); //gcolor
+gl_FragData[0] = outputIce; //gcolor
 }}

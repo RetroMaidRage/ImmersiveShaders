@@ -25,7 +25,7 @@ varying vec2 TexCoords;
 uniform vec3 shadowLightPosition;
 uniform sampler2D colortex1;
 uniform vec3 upPosition;
-const int noiseTextureResolution = 512;  // Clouds Resolution [512 1024 2048 4096 8192]
+const int noiseTextureResolution = 1;  // Clouds Resolution [512 1024 2048 4096 8192]
 
 /*
 const int colortex0Format = RGBA16F;
@@ -87,7 +87,7 @@ float cloudFinalNoise2 = float(mix(cloudFinalNoise, cloudPreFinalnoise2, cloudPr
 			color.g = (color.g*3);
 			color.b = (color.b*5);
 
-  color = color / (color + 35.2) * (1.0+2.0);
+  color = color / (color + 40.2) * (1.0+2.0);
     Clouds = mix(color.rgb, cloudColor.rgb, cloudFinalNoise2);
 color = color + vec4(Clouds, 1.0);
 

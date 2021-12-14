@@ -341,7 +341,7 @@ vec3 Vieww = ViewWw.xyz / ViewWw.w;
 
 vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
      vec3 viewDir = normalize(lightDir - Vieww.xyz);
-       float specularStrength = 0.0;
+       float specularStrength = 10.0;
 if (rainStrength == 1){
      specularStrength = 1.0;
 }
@@ -359,6 +359,10 @@ if (rainStrength == 1){
 
        vec3 reflectDir = reflect(-lightDir, Normal);
        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+
+
+            //  vec3 reflectDir = reflect(-normalize(Vieww), normalize(Vieww));
+            //  float spec = pow(max(dot(normalize(Vieww), reflectDir), 0.0), 32);
 
        vec3 specular = specularStrength * spec * testLight;
 

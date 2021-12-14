@@ -102,6 +102,8 @@ const int colortex2Format = RGB16;
 
 #define FXAA
 
+
+
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
    }
