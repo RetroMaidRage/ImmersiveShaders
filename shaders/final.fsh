@@ -36,7 +36,7 @@ uniform vec3 previousCameraPosition;
 uniform vec3 skyColor;
 uniform float frameTimeCounter;
 uniform int isEyeInWater;
-
+uniform mat4 gbufferModelView;
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
@@ -74,11 +74,11 @@ const int colortex2Format = RGB16;
 #define Vignette_Strenght 1.0 ///[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define Vignette_Radius 3.0 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
-#define MOTIONBLUR
+//#define MOTIONBLUR
 #define MOTIONBLUR_AMOUNT 2 //[1 2 3 4 5 6 7 8 9 10 11 12]
 //#define RadialBlur
 //#define Gaussian_Blur
-#define ScreenSpaceRain
+//#define ScreenSpaceRain
 #define RainDrops
 #define GroundScreenSpaceFog
 #define GroundScreenSpaceFogDistance 8 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
@@ -100,7 +100,7 @@ const int colortex2Format = RGB16;
 //#define Chromation_Abberation
 #define ChromaOffset 0.002 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
-#define FXAA
+//#define FXAA
 
 
 
@@ -361,6 +361,27 @@ colorGR += sample;
                 color = SR_Color_Type;
           }
   #endif
+  //------------------------------------------------------------------------------------------------------------------
+  #ifdef ScreenSpaceRain
+  if (rainStrength == 1.0){
+  	vec3 raintex = texture(noisetex,vec2(uv.x*2.0,uv.y*0.1+frameTimeCounter*0.085)).rgb/2.0;
+  	vec2 where = (uv.xy-raintex.xy);
+  	vec3 texchur1 = texture(colortex0,vec2(where.x,where.y)).rgb/2;
+    color.rgb +=texchur1;
+    color /=1.2;
+  }
+  #endif
+  //------------------------------------------------------------------------------------------------------------------
+  #ifdef RainDrops
+  if (rainStrength == 1.0){
+    uv += RainDropCalc(gl_FragCoord.xy);
+  color += texture2D(colortex0, uv);
+    color /= 3;
+  }
+  #endif
+
+
+
 //------------------------------------------------------------------------------------------------------------------
   #ifdef BLOOM
   	int j;
@@ -396,16 +417,6 @@ color.rgb = TonemappingType(color.rgb);
 VignetteColor(color.rgb);
 #endif
 //------------------------------------------------------------------------------------------------------------------
-#ifdef ScreenSpaceRain
-if (rainStrength == 1.0){
-	vec3 raintex = texture(noisetex,vec2(uv.x*2.0,uv.y*0.1+frameTimeCounter*0.085)).rgb/2.0;
-	vec2 where = (uv.xy-raintex.xy);
-	vec3 texchur1 = texture(colortex0,vec2(where.x,where.y)).rgb/2;
-  color.rgb +=texchur1;
-  color /=1.2;
-}
-#endif
-//------------------------------------------------------------------------------------------------------------------
 #ifdef FilmGrain
 float invLum = clamp(1.0 - dot(vec3(0.299,0.587,0.114), color.rgb), 0.0, 1.0);
 float seed = (uv.x + .0) * (uv.y + 4.0) * (mod(frameTimeCounter,10.0) + 12342.876);
@@ -415,14 +426,6 @@ float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
 vec3 grain = vec3(grainR, grainG, grainB);
        color.rgb += grain/FilmGrainStrenght;
  #endif
-//------------------------------------------------------------------------------------------------------------------
-#ifdef RainDrops
-if (rainStrength == 1.0){
-  uv += RainDropCalc(gl_FragCoord.xy);
-color += texture2D(colortex0, uv);
-color /=1.5;
-}
-#endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef GroundScreenSpaceFog
     float depthfog = texture2D(depthtex0, texcoord.st).r;

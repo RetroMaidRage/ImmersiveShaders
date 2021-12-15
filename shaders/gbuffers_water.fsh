@@ -130,6 +130,8 @@ vec4 absorptionColor = vec4(absorption, 1.0);
 /* DRAWBUFFERS:0 */
 if (id == 35) {
 gl_FragData[0] = outputWater; //gcolor
+gl_FragData[1] = vec4(0.0);
+gl_FragData[2] = vec4(0.0);
 }else{
 gl_FragData[0] = outputIce; //gcolor
 }}
