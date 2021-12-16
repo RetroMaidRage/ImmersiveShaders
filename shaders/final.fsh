@@ -60,6 +60,7 @@ const int colortex2Format = RGB16;
 #define BLOOM_AMOUNT 5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define BLOOM_QUALITY 5 //[1 2 3 4 5 6 7 8 9 10 11 12]
 #define BLOOM_QUALITY2 -2 //[-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12]
+#define BLOOM_BLUR FastBlur //[FastBlur QuallityBlur]
 
 #define COLORCORRECT_RED 1.6 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define COLORCORRECT_GREEN 1.4 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -106,6 +107,11 @@ const int colortex2Format = RGB16;
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
+   }
+
+   float normpdf(in float x, in float sigma)
+   {
+   	return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
    }
 
    float timefract = worldTime;
@@ -198,7 +204,11 @@ vec4 lensflarealbedo = texture(colortex0, offset);
 void main() {
     //vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
 vec3 SunPosNormal = normalize(sunPosition);
+
 vec2 SunPosNormalVec2 = normalize(sunPosition.xy);
+
+        vec2 GetSreenRes = vec2(viewWidth, viewHeight);
+
 
 vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
 tpos = vec4(tpos.xyz/tpos.w,1.0);
@@ -224,7 +234,7 @@ color.r = texture(colortex0, uv - ChromaOffset).r;
     color.b = texture(colortex0, uv + ChromaOffset).b;
     #endif
 //------------------------------------------------------------------------------------------------------
-  #ifdef Gaussian_Blur
+//fast
   float Pi = 6.28318530718; // Pi*2
 
       // GAUSSIAN BLUR SETTINGS {{{
@@ -236,17 +246,48 @@ color.r = texture(colortex0, uv - ChromaOffset).r;
 
       vec2 Radius = size / vec2(viewWidth, viewHeight);
 
-        vec4 Blur = texture(colortex0, uv);
+        vec4 BlurGaussianFast = texture(composite, uv);
 
   for( float d=0.0; d<Pi; d+=Pi/Directions)
   {
   for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
     {
-  Blur += texture( colortex0, uv+vec2(cos(d),sin(d))*Radius*i);
-  color = Blur;
+  BlurGaussianFast += texture( composite, uv+vec2(cos(d),sin(d))*Radius*i);
+    #ifdef Gaussian_Blur
+  color = BlurGaussianFast;
+  #endif
     }
   }
-#endif
+
+  //declare stuff
+    const int mSize = 11;
+    const int kSize = (mSize-1)/2;
+    float kernel[mSize];
+    vec3 BlurGaussianQuallity = vec3(0.0);
+
+    //create the 1-D kernel
+    float sigma = 7.0;
+    float Z = 0.0;
+    for (int j = 0; j <= kSize; ++j)
+    {
+      kernel[kSize+j] = kernel[kSize-j] = normpdf(float(j), sigma);
+    }
+
+    //get the normalization factor (as the gaussian has been clamped)
+    for (int j = 0; j < mSize; ++j)
+    {
+      Z += kernel[j];
+    }
+
+    //read out the texels
+    for (int i=-kSize; i <= kSize; ++i)
+    {
+      for (int j=-kSize; j <= kSize; ++j)
+      {
+
+        BlurGaussianQuallity += kernel[kSize+j]*kernel[kSize+i]*texture(colortex0, (gl_FragCoord.xy+vec2(float(i),float(j))) / GetSreenRes).rgb;
+
+      }}
 //------------------------------------------------------------------------------------------------------------------
 #ifdef RadialBlur
 const int nsamples = 10;
@@ -391,14 +432,18 @@ colorGR += sample;
       for( ii= -BLOOM_QUALITY2 ;ii < BLOOM_QUALITY; ii++) {
           for (j = -BLOOM_QUALITY2; j < BLOOM_QUALITY; j++) {
               vec2 coord = texcoord.st + vec2(j,ii) * 0.001;
-                  if(coord.x > 0 && coord.x < 1 && coord.y > 0 && coord.y < 1){
-                      sum += texture2D(composite, coord) * BLOOM_AMOUNT;
+                  if(coord.y > 0 && coord.y < 1 && coord.y > 0 && coord.y < 1){
+
+          vec4  QuallityBlur = vec4(BlurGaussianQuallity, 1.0);
+          vec4  FastBlur = BlurGaussianFast;
+                      sum += texture2D(colortex0, coord) * BLOOM_AMOUNT +BLOOM_BLUR;
                       gaux1 += 1;
                   }
               }
       }
       sum = sum / vec4(gaux1);
-  		color += sum*sum*0.012;
+
+  		color += sum*sum*0.00018;
   #endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef CROSSPROCESS
@@ -475,6 +520,8 @@ vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 )));
 color = vec4( mix( color.rgb , gray , Fac) , 1.0 );
 #endif
 //-----------------------------------------------------OUTPUT------------------------------------------------------
+
+
 
 gl_FragColor = color;
 

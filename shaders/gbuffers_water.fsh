@@ -128,7 +128,7 @@ vec4 absorptionColor = vec4(absorption, 1.0);
   vec4 outputWater = mix(fresnelColor, cwater, frensel)+(SpecularAngle*SpecularTexture);
 	  vec4 outputIce = mix(fresnelColor, color, frensel)+(SpecularAngle*SpecularTexture);
 /* DRAWBUFFERS:0 */
-if (id == 35) {
+if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor
 gl_FragData[1] = vec4(0.0);
 gl_FragData[2] = vec4(0.0);

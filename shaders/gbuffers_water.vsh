@@ -44,7 +44,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	normal = gl_NormalMatrix * gl_Normal;
 
   #ifdef waves
-	if (mc_Entity.x == 35.0) {
+	if (mc_Entity.x == 10001.0) {
 
 
 			 float fy = fract(vworldpos.y + 0.001);
