@@ -56,8 +56,8 @@ const int colortex2Format = RGB16;
 #define SUNRAYS_COLOR_RED 3.0 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define SUNRAYS_TYPE Godrays //[Godrays Crespecular]
 #define SR_Color_Type SunRaysFogColor //[SunRaysCustomColor SunRaysFogColor SunRaysSkyColor]
-//#define BLOOM
-#define BLOOM_AMOUNT 5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define BLOOM
+#define BLOOM_AMOUNT 0.00010 ///[0.00018 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001]
 #define BLOOM_QUALITY 5 //[1 2 3 4 5 6 7 8 9 10 11 12]
 #define BLOOM_QUALITY2 -2 //[-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12]
 #define BLOOM_BLUR FastBlur //[FastBlur QuallityBlur]
@@ -414,15 +414,12 @@ colorGR += sample;
   #endif
   //------------------------------------------------------------------------------------------------------------------
   #ifdef RainDrops
+  uv += RainDropCalc(gl_FragCoord.xy);
   if (rainStrength == 1.0){
-    uv += RainDropCalc(gl_FragCoord.xy);
-  color += texture2D(colortex0, uv);
+color += texture2D(colortex0, uv);
     color /= 3;
   }
   #endif
-
-
-
 //------------------------------------------------------------------------------------------------------------------
   #ifdef BLOOM
   	int j;
@@ -436,14 +433,14 @@ colorGR += sample;
 
           vec4  QuallityBlur = vec4(BlurGaussianQuallity, 1.0);
           vec4  FastBlur = BlurGaussianFast;
-                      sum += texture2D(colortex0, coord) * BLOOM_AMOUNT +BLOOM_BLUR;
+                      sum += texture2D(colortex0, coord) +BLOOM_BLUR;
                       gaux1 += 1;
                   }
               }
       }
       sum = sum / vec4(gaux1);
 
-  		color += sum*sum*0.00018;
+  		color += sum*sum*BLOOM_AMOUNT;
   #endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef CROSSPROCESS
