@@ -5,7 +5,7 @@ uniform sampler2D gcolor;
 uniform sampler2D depthtex0;
 
 uniform vec3 sunPosition;
-
+ 
 uniform float worldTime;
 uniform float rainStrength;
 uniform float aspectRatio;

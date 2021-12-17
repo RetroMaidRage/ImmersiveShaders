@@ -15,3 +15,4 @@ void main() {
    TexCoords = gl_MultiTexCoord0.st;
      textureCoordinates = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 }
+ 

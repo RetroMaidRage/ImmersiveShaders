@@ -12,7 +12,7 @@ uniform int worldTime;
 uniform vec3 fogColor;
 uniform float rainStrength;
 flat in int water;
-
+ 
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;

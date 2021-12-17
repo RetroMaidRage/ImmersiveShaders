@@ -11,3 +11,4 @@ void main() {
 vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 vec4 clipPos = gl_ProjectionMatrix * vec4(viewPos, 1.0);
 vec3 screenPos = clipPos.xyz / clipPos.w * 0.5 + 0.5;
+ 
