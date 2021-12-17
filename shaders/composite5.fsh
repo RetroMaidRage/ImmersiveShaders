@@ -5,7 +5,7 @@ uniform sampler2D gcolor;
 uniform sampler2D depthtex0;
 
 uniform vec3 sunPosition;
- 
+
 uniform float worldTime;
 uniform float rainStrength;
 uniform float aspectRatio;
@@ -67,46 +67,11 @@ vec3 convertSpace(sampler2D dtx, int spc, vec2 texcoord) {
 void main() {
 
 
-	vec3 viewPos = convertSpace(depthtex0, 2, texcoord.st);
+vec4 color = texture2D(gcolor, texcoord.st);
 
-	//values
-	float dst;
-	float dns;
-	float water;
-
-	//colors
-	vec3 color = texture2D(gcolor, texcoord.st).rgb;
-	vec4 finalColor;
-	vec3 fogColor;
-
-	//block detection
-	water =  texture2D(colortex2, texcoord.st).r * 255;
-
-
-	if(int(water) == 1 ) {
-		#ifdef waterFog
-			fogColor = vec3(110.0,0.3,1);
-			dns = waterFogDensity;
-			dst = length( convertSpace(depthtex1, 2, texcoord) - viewPos);
-			finalColor = vec4(color * mix(fogColor, vec3(1,1,1), exp(-dst * dns)), 1.0);
-		#else
-			finalColor = vec4(color, 1.0);
-		#endif
-	} else {
-		finalColor = vec4(color, 1.0);
-	}
-
-
-		int id = int(entityId + 0.5);
-
-
-
-
-
-		color *= 1111.0;
 /* DRAWBUFFERS:0 */
 
 
 
-	gl_FragData[0] = finalColor; //gcolor
+	gl_FragData[0] = color; //gcolor
 }

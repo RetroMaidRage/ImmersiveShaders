@@ -7,7 +7,7 @@
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
 #include "/files/tonemaps/tonemap_uncharted.glsl"
- 
+
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
@@ -149,7 +149,7 @@ float AdjustLightmapTorch(in float torch) {
 
 
        float K =LIGHT_STRENGHT;
-       float P = 5.06f;
+       float P = 8.06f;
         return K * pow(torch, P);
 }
 

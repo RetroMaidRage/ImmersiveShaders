@@ -3,7 +3,7 @@
 //--------------------------------------------UNIFORMS------------------------------------------
 attribute vec4 mc_Entity;
 attribute vec2 mc_midTexCoord;
-varying vec3 vworldpos;
+out vec3 vworldpos;
 uniform float frameTimeCounter;
 varying vec2 lmcoord;
 varying vec2 texcoord;
@@ -15,7 +15,8 @@ varying vec2 TexCoords;
 varying vec2 LightmapCoords;
 varying vec3 Normal;
 varying vec4 Color;
-
+out float BlockId;
+varying vec3 SkyPos;
 //--------------------------------------------DEFINE------------------------------------------
 #define waving_grass
 #define waving_leaves_speed 0.1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
@@ -25,6 +26,8 @@ const float pi = 3.14f;
 float tick = frameTimeCounter;
 
 void main() {
+		SkyPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+		BlockId = mc_Entity.x;
 texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	vec4 position = gl_ModelViewMatrix * gl_Vertex;
@@ -46,6 +49,17 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
        vpos.x += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
             vpos.y += sin((tick * pi / (28.0 * waving_leaves_speed)) + (vworldpos.x + 0.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
     }
+
+		    if (mc_Entity.x == 10008.0) {
+					float fy = fract(vworldpos.y + 0.001);
+
+						if (fy > 0.002) {
+		 float displacement = 0.0;
+						float wave = 0.085 * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
+												 + 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
+												 displacement = clamp(wave, -fy, 1.0-fy);
+												 vpos.y += displacement;
+											 }}
   #endif
 
 vpos = gbufferModelView * vpos;
