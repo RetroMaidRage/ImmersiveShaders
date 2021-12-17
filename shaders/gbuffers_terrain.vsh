@@ -22,6 +22,7 @@ varying vec3 SkyPos;
 #define waving_leaves_speed 0.1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 #define waving_grass_speed 0.07 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 const float pi = 3.14f;
+varying vec3 viewPos;
 
 float tick = frameTimeCounter;
 
@@ -33,7 +34,8 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	vec4 position = gl_ModelViewMatrix * gl_Vertex;
   vec4 vpos = gbufferModelViewInverse*position;
   vworldpos = vpos.xyz + cameraPosition;
-
+	viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	
   #ifdef waving_grass
     if (mc_Entity.x == 10002.0 || mc_Entity.x == 10003.0 || mc_Entity.x == 10004.0) {
 

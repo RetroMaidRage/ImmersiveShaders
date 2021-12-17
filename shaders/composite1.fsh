@@ -12,7 +12,7 @@ uniform int worldTime;
 uniform vec3 fogColor;
 uniform float rainStrength;
 flat in int water;
- 
+
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
@@ -67,7 +67,7 @@ void main() {
     bool isTerrain = depth < 1.0;
 #ifdef WaterFog
     if (isEyeInWater == 1) {
-        color = mix(color, waterfogColor, min(GetDepthLinear(texcoord.st) * 1.3 / far, 1.0));
+        color = mix(color, waterfogColor, min(GetDepthLinear(texcoord.st) * 1.2 / far, 1.0));
     }
 #endif
 

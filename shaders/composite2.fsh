@@ -25,7 +25,7 @@ varying vec2 TexCoords;
 uniform vec3 shadowLightPosition;
 uniform sampler2D colortex1;
 uniform vec3 upPosition;
-const int noiseTextureResolution = 1;  // Clouds Resolution [512 1024 2048 4096 8192]
+const int noiseTextureResolution = 1;  
 
 /*
 const int colortex0Format = RGBA16F;
@@ -33,7 +33,7 @@ const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
 */
 
- 
+
 //--------------------------------------------DEFINE------------------------------------------
 #define CloudySky
 
