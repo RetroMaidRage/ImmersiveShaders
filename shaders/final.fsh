@@ -69,7 +69,7 @@ const int colortex2Format = RGB16;
 
 #define CROSSPROCESS
 #define ColorSettings Summertime //[Summertime Default]
- 
+
 #define Vignette
 #define Vignette_Distance 1.7 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define Vignette_Strenght 1.0 ///[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
@@ -87,8 +87,11 @@ const int colortex2Format = RGB16;
 #define GroundScreenSpaceFogStrenght 8 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define fogDensityNight 1.84 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.14 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define fogDensitySunset 1.2 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+
 //#define FilmGrain
-#define FilmGrainStrenght 10 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+#define FilmGrainRain
+
+#define FilmGrainStrenght 20 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 
 //#define CinematicBorder
 #define CinematicBorderIntense 0.05  //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
@@ -99,7 +102,7 @@ const int colortex2Format = RGB16;
 #define RainDesaturationFactor 0.3 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9]
 
 //#define Chromation_Abberation
-#define ChromaOffset 0.002 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+#define ChromaOffset 0.001 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 
 //#define FXAA
 
@@ -428,7 +431,7 @@ color += texture2D(colortex0, uv);
           float gaux1 = 0;
       for( ii= -BLOOM_QUALITY2 ;ii < BLOOM_QUALITY; ii++) {
           for (j = -BLOOM_QUALITY2; j < BLOOM_QUALITY; j++) {
-              vec2 coord = texcoord.st + vec2(j,ii) * 0.001;
+              vec2 coord = texcoord.st + vec2(j,ii) * 0.0001;
                   if(coord.y > 0 && coord.y < 1 && coord.y > 0 && coord.y < 1){
 
           vec4  QuallityBlur = vec4(BlurGaussianQuallity, 1.0);
@@ -459,14 +462,20 @@ color.rgb = TonemappingType(color.rgb);
 VignetteColor(color.rgb);
 #endif
 //------------------------------------------------------------------------------------------------------------------
-#ifdef FilmGrain
+
 float invLum = clamp(1.0 - dot(vec3(0.299,0.587,0.114), color.rgb), 0.0, 1.0);
 float seed = (uv.x + .0) * (uv.y + 4.0) * (mod(frameTimeCounter,10.0) + 12342.876);
 float grainR = fract((mod(seed, 13.0) + 1.0) * (mod(seed, 127.0) + 1.0)) - 0.5;
 float grainG = fract((mod(seed, 15.0) + 1.0) * (mod(seed, 109.0) + 1.0)) - 0.5;
 float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
 vec3 grain = vec3(grainR, grainG, grainB);
+#ifdef FilmGrainRain
+  if (rainStrength == 1.0){
        color.rgb += grain/FilmGrainStrenght;
+     }
+     #endif
+     #ifdef FilmGrain
+        color.rgb += grain/FilmGrainStrenght;
  #endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef GroundScreenSpaceFog

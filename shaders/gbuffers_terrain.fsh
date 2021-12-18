@@ -45,7 +45,6 @@ void main(){
   vec3 reflectDir = reflect(lightDir, viewDir);
 
    float SpecularAngle = pow(max(dot(halfDir, Normal), 0.0), 50);
-      float SpecularAngleRain = pow(max(dot(halfDir, Normal), 0.0), 2);
    vec4 SpecularTexture = vec4(1.0, 1.0, 1.0,1.0);
 //----------------------------------------------------PUDDLE----------------------------------------------
 
@@ -83,19 +82,19 @@ void main(){
 
 
         }
-        #ifdef FakeCaustic
-          if (isEyeInWater == 1.0){
 
-
-              Albedo = puddle_color+(colorToAddWater*5);
-          }
-          #endif
       }
       if (id == 10008.0) {
 
         Albedo += (SpecularAngle*Albedo)*specularTerrainStrenght;
       }
+      #ifdef FakeCaustic
+        if (isEyeInWater == 1.0){
 
+
+            Albedo = puddle_color+(colorToAddWater*5);
+        }
+        #endif
 
 
     /* DRAWBUFFERS:012 */

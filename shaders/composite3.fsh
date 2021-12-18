@@ -31,7 +31,7 @@ float Auto_ExpsoureY() { //sky
 float Auto_ExpsoureX() { //block
 	float aE_lightmap	= 1.0 - eyeAdaptX;
 	return 1.0 + aE_lightmap * exposureAmountBlock;
- 
+
 }
 void main() {
 vec3 color = texture2D(gcolor, texcoord).rgb;
@@ -39,5 +39,6 @@ vec3 color = texture2D(gcolor, texcoord).rgb;
 color.rgb = color.rgb * Auto_ExpsoureY();
 color.rgb = color.rgb * Auto_ExpsoureX();
 #endif
+
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }

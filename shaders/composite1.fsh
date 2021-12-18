@@ -12,7 +12,7 @@ uniform int worldTime;
 uniform vec3 fogColor;
 uniform float rainStrength;
 flat in int water;
-
+in  float entityId;
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
@@ -86,7 +86,7 @@ void main() {
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * (rainStrength*2) / far, 1.0));
 color = mix(color, fogSetting, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
     #endif
-
+    /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(color, 1.0);
 
 }

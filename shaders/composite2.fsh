@@ -25,7 +25,7 @@ varying vec2 TexCoords;
 uniform vec3 shadowLightPosition;
 uniform sampler2D colortex1;
 uniform vec3 upPosition;
-const int noiseTextureResolution = 1;  
+const int noiseTextureResolution = 1;
 
 /*
 const int colortex0Format = RGBA16F;

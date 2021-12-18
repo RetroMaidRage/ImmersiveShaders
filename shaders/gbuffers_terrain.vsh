@@ -25,6 +25,7 @@ const float pi = 3.14f;
 varying vec3 viewPos;
 
 float tick = frameTimeCounter;
+float Time = max(frameTimeCounter, 1100);
 
 void main() {
 		SkyPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
@@ -35,14 +36,20 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
   vec4 vpos = gbufferModelViewInverse*position;
   vworldpos = vpos.xyz + cameraPosition;
 	viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-	
+
   #ifdef waving_grass
     if (mc_Entity.x == 10002.0 || mc_Entity.x == 10003.0 || mc_Entity.x == 10004.0) {
 
-      float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.12 + 0.02;
-       vpos.x += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + -5.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
-            vpos.z += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + 10.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
+      float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.075;
+    //   vpos.x += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + -5.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;
+          //  vpos.z += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + 10.0) * 0.1 + (vworldpos.z + 0.0) * 0.1) * magnitude;
                 //  position.y += sin((tick * pi / (28.0 * speed)) + (position.x + 0.0) * 0.1 + (position.z + 0.0) * 0.1) * magnitude;
+
+								vpos.x += sin(pow(tick, 1.0))*magnitude;
+								vpos.z += sin(pow(tick, 1.0))*magnitude;
+																vpos.x += sin(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time))*magnitude;
+																vpos.z += cos(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time)/50)*magnitude;
+															//			vpos.y += sin(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time)/5)*(magnitude/2);
     }
 
     if (mc_Entity.x == 10007.0) {
@@ -63,6 +70,14 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 												 vpos.y += displacement;
 											 }}
   #endif
+
+		    if (mc_Entity.x == 10011.0) {
+  float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.x) * 0.075;
+					vpos.x += sin(pow(tick, 1.0))*magnitude;
+			//		vpos.z += sin(pow(tick, 1.0))*magnitude;
+													vpos.x += sin(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.x + 1.0+Time)+(vworldpos.x + 11.0+Time)/20)*magnitude;
+									//				vpos.z += cos(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time)/50)*magnitude;
+				}
 
 vpos = gbufferModelView * vpos;
 gl_Position = gl_ProjectionMatrix * vpos;

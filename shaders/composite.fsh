@@ -50,6 +50,7 @@ varying vec3 pos;
 in vec2 textureCoordinates;
 uniform sampler2D gnormal;
 uniform mat4 gbufferModelView;
+in  float entityId;
 //--------------------------------------------CONST------------------------------------------
 
 /*
@@ -89,7 +90,7 @@ float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) +
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
-
+    	int id = int(entityId + 0.5);
 
     vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
   	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
@@ -147,7 +148,8 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
 
 float AdjustLightmapTorch(in float torch) {
 
-
+//if block {
+//}
        float K =LIGHT_STRENGHT;
        float P = 8.06f;
         return K * pow(torch, P);
@@ -399,6 +401,7 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
     vec3 DiffuseAndSpecular = Diffuse + specular;
 
 //Diffuse += volumetric_light(viewPos1, shadowPos);
+    /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0);
 
 }

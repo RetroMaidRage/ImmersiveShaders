@@ -8,7 +8,7 @@ varying vec2 texcoord;
 varying vec4 glcolor;
 
 #define rainPower 0.2 //[0 1 2 3 4 5]
-//#define VanillaRain
+#define VanillaRain
 void main() {
 	vec4 color = texture2D(texture, texcoord)*rainPower;
 	color *= texture2D(lightmap, lmcoord);
