@@ -4,9 +4,13 @@
 #include "/files/tonemaps/tonemap_aces.glsl"
 #include "/files/tonemaps/tonemap_reinhard2.glsl"
 #include "/files/tonemaps/tonemap_lottes.glsl"
+
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
+
 #include "/files/antialiasing/fxaa.glsl"
+
+#include "/files/positions/biomes.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -37,6 +41,7 @@ uniform vec3 skyColor;
 uniform float frameTimeCounter;
 uniform int isEyeInWater;
 uniform mat4 gbufferModelView;
+
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
@@ -81,6 +86,7 @@ const int colortex2Format = RGB16;
 //#define Gaussian_Blur
 //#define ScreenSpaceRain
 #define RainDrops
+
 #define GroundScreenSpaceFog
 #define GroundScreenSpaceFogDistance 8 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GroundScreenSpaceDestiny 4 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
@@ -106,6 +112,7 @@ const int colortex2Format = RGB16;
 
 //#define FXAA
 
+//#define WarmEffect
 
 
    float getDepth(vec2 coord) {
@@ -347,7 +354,7 @@ previousPosition /= previousPosition.w;
 				break;
 			}
 
-			color += texture2D(composite, coord);
+			color += texture2D(colortex0, coord);
 			++samples;
 		}
 			color = (color/1.0)/samples;
@@ -428,7 +435,7 @@ color += texture2D(colortex0, uv);
   	int j;
   	int ii;
   	vec4 sum = vec4(0);
-          float gaux1 = 0;
+          float gaux5 = 0;
       for( ii= -BLOOM_QUALITY2 ;ii < BLOOM_QUALITY; ii++) {
           for (j = -BLOOM_QUALITY2; j < BLOOM_QUALITY; j++) {
               vec2 coord = texcoord.st + vec2(j,ii) * 0.0001;
@@ -437,11 +444,11 @@ color += texture2D(colortex0, uv);
           vec4  QuallityBlur = vec4(BlurGaussianQuallity, 1.0);
           vec4  FastBlur = BlurGaussianFast;
                       sum += texture2D(colortex0, coord) +BLOOM_BLUR;
-                      gaux1 += 1;
+                      gaux5 += 1;
                   }
               }
       }
-      sum = sum / vec4(gaux1);
+      sum = sum / vec4(gaux5);
 
   		color += sum*sum*BLOOM_AMOUNT;
   #endif
@@ -527,7 +534,13 @@ color = vec4( mix( color.rgb , gray , Fac) , 1.0 );
 #endif
 //-----------------------------------------------------OUTPUT------------------------------------------------------
 
-
+#ifdef WarmEffect
+if (isBiomeDesert == 1){
+  vec2 fake_refract = vec2(sin(frameTimeCounter + texcoord.x*100.0 + texcoord.y*50.0),cos(frameTimeCounter + texcoord.y*100.0 + texcoord.x*50.0));
+	 	 color += texture2D(colortex0, texcoord.st+ fake_refract * 0.002);
+     	 	 color /=1.35;
+}
+#endif
 
 gl_FragColor = color;
 

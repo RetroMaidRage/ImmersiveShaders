@@ -97,6 +97,12 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
   	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
     vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 
+    float get_linear_depth(in float depth)
+    {
+        return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+    }
+
+
     vec3 localToScreen(vec3 pos) {
       vec3 data = mat3(gbufferProjection) * pos;
       data += gbufferProjection[3].xyz;

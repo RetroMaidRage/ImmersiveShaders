@@ -26,6 +26,7 @@ varying vec3 viewVector;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
 #define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
+#define BLOCK_WAVE
 const float pi = 3.14f;
 
 float tick = frameTimeCounter;
@@ -61,7 +62,20 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 											vpos.y += displacement;
 	}}
 #endif
+#ifdef BLOCK_WAVE
+if (mc_Entity.x == 10012.0) {
+	float fy = fract(vworldpos.y + 0.001);
 
+		if (fy > 0.002) {
+float displacement = 0.0;
+		float wave = 0.085 * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
+								 + 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.y / 11.0 + vworldpos.z /  5.0));
+								 displacement = clamp(wave, -fy, 1.0-fy);
+								 vpos.y += displacement;
+								 									
+							 }
+						 }
+#endif
 tangent = vec3(0.0);
 binormal = vec3(0.0);
 normal = normalize(gl_NormalMatrix * normalize(gl_Normal));
