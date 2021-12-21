@@ -46,10 +46,11 @@ uniform sampler2D composite;
 varying vec2 TexCoords;
 varying vec3 viewPos;
 varying vec3 normal;
-
+varying vec3 vworldpos;
 varying vec3 binormal;
 varying vec3 tangent;
 varying vec3 viewVector;
+varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define WaterType Custom //[Custom Texture]
 #define WaterTransparent 2.0  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
@@ -60,7 +61,7 @@ varying vec3 viewVector;
 #define specularDistance 50 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 #define specularTextureStrenght 0.7 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 #define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
-//--------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
 
 float     GetDepthLinear(in vec2 coord) {
    return 2.0f * near * far / (far + near - (2.0f * texture2D(depthtex0, coord).x - 1.0f) * (far - near));
@@ -69,10 +70,58 @@ float     GetDepthLinear(in vec2 coord) {
 float linearDepth(float depth){
 	return 2.0 * (near * far) / (far + near - (depth) * (far - near));
 }
+//---------------------------------------------------------------------------------------------------------------------------
+float PI = 3.14;
+
+float rainx = clamp(rainStrength, 0.0f, 1.0f)/1.0f;
+
+vec2 dx = dFdx(texcoord.xy);
+vec2 dy = dFdy(texcoord.xy);
+
+float wave(float n) {
+return sin(2 * PI * (n));
+}
+//---------------------------------------------------------------------------------------------------------------------------
+float waterH(vec3 posxz) {
+
+float wave = 10.0;
 
 
+float factor = 2.0;
+float amplitude = 0.2;
+float speed = 4.0;
+float size = 0.2;
 
+float px = posxz.x/50.0 + 250.0;
+float py = posxz.z/50.0  + 250.0;
 
+float fpx = abs(fract(px*20.0)-0.5)*2.0;
+float fpy = abs(fract(py*20.0)-0.5)*2.0;
+
+float d = length(vec2(fpx,fpy));
+
+for (int i = 1; i < 4; i++) {
+	wave -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
+	factor /= 2;
+}
+
+factor = 1.0;
+px = -posxz.x/50.0 + 250.0;
+py = -posxz.z/150.0 - 250.0;
+
+fpx = abs(fract(px*20.0)-0.5)*2.0;
+fpy = abs(fract(py*20.0)-0.5)*2.0;
+
+d = length(vec2(fpx,fpy));
+float wave2 = 0.0;
+for (int i = 1; i < 4; i++) {
+	wave2 -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
+	factor /= 2;
+}
+
+return amplitude*wave2+amplitude*wave;
+}
+//---------------------------------------------------------------------------------------------------------------------------
 void main() {
 	int id = int(entityId + 0.5);
 
@@ -101,8 +150,23 @@ vec3 lightDir = normalize(ShadowLightPosition);
 vec3 viewDir = -normalize(viewPos);
 vec3 halfDir = normalize(lightDir + viewDir);
 vec3 reflectDir = reflect(lightDir, viewDir);
+//---------------------------------------------------------------------------------------------------------------------------
+vec3 posxz = vworldpos.xyz;
 
- float SpecularAngle = pow(max(dot(halfDir, Normal), 0.0), specularDistance);
+posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
+posxz.z += cos(posxz.x+frameTimeCounter*0.5)*0.25;
+
+float deltaPos = 0.4;
+float h0 = waterH(posxz);
+float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
+float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
+float h3 = waterH(posxz + vec3(0.0,0.0,deltaPos));
+float h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos));
+
+float xDelta = ((h1-h0)+(h0-h2))/deltaPos;
+float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
+//---------------------------------------------------------------------------------------------------------------------------
+ float SpecularAngle = pow(max(dot(halfDir, Normal), 0.0),specularDistance);
 
  if (isEyeInWater == 1) {
  SpecularAngle = 0;
@@ -114,19 +178,6 @@ SpecularAngle = 0;
 
 vec4 SpecularCustom= vec4(1.0, 1.0, 1.0, 1.0)*SpecularCustomStrenght;
 vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStrenght;
-
-
-vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);//vec3(0.1, 0.25, 0.4);
-
-float depth_solid = linearDepth(texture2D(depthtex0, texcoord.st).x);
-float depth_translucent = linearDepth(texture2D(depthtex1, texcoord.st).x);
-
-//Difference between solid and trans depth
-float dist_fog = distance(depth_solid, depth_translucent);
-
-//Exponential fog
-vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
-vec4 absorptionColor = vec4(absorption, 1.0);
 //--------------------------------------------------------------------------------------
   vec4 outputWater = mix(fresnelColor, cwater, frensel);
 	  vec4 outputIce = mix(fresnelColor, color, frensel);
@@ -135,6 +186,25 @@ vec4 absorptionColor = vec4(absorption, 1.0);
    outputWater +=(SpecularAngle*SpecularTexture);
 	   outputIce += (SpecularAngle*SpecularTexture);
     #endif
+    vec3 newnormal = normalize(vec3(xDelta,yDelta,1.0-xDelta*xDelta-yDelta*yDelta));
+
+  	vec4 frag2;
+  		frag2 = vec4((normal) * 0.5f + 0.5f, 1.0f);
+
+  	if (iswater > 0.9) {
+  		vec3 bump = newnormal;
+  			bump = bump;
+
+
+  		float bumpmult = 0.05;
+
+  		bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
+  		mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+  							tangent.y, binormal.y, normal.y,
+  							tangent.z, binormal.z, normal.z);
+
+  		frag2 = vec4(normalize(bump * tbnMatrix) * 0.5 + 0.5, 1.0);
+  	}
 /* DRAWBUFFERS:0 */
 if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor

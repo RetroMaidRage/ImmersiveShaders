@@ -23,6 +23,8 @@ varying vec3 normal;
 varying vec3 binormal;
 varying vec3 tangent;
 varying vec3 viewVector;
+varying vec3 wpos;
+varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
 #define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
@@ -32,7 +34,9 @@ const float pi = 3.14f;
 float tick = frameTimeCounter;
 
 void main() {
+	iswater = 0.0f;
 	float displacement = 0.0;
+
 
 	vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
@@ -47,7 +51,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
   vec4 vpos = gbufferModelViewInverse*position;
   vworldpos = vpos.xyz + cameraPosition;
 	normal = gl_NormalMatrix * gl_Normal;
-
+	wpos = vworldpos;
   #ifdef waves
 	if (mc_Entity.x == 10001.0) {
 
@@ -72,7 +76,7 @@ float displacement = 0.0;
 								 + 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.y / 11.0 + vworldpos.z /  5.0));
 								 displacement = clamp(wave, -fy, 1.0-fy);
 								 vpos.y += displacement;
-								 									
+
 							 }
 						 }
 #endif
@@ -137,6 +141,11 @@ mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
 
 vpos = gbufferModelView * vpos;
 gl_Position = gl_ProjectionMatrix * vpos;
+texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
+
+lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).st;
+
+gl_FogFragCoord = gl_Position.z;
     TexCoords = gl_MultiTexCoord0.st;
     LightmapCoords = mat2(gl_TextureMatrix[1]) * gl_MultiTexCoord1.st;
     LightmapCoords = (LightmapCoords * 33.05f / 32.0f) - (1.05f / 32.0f);
