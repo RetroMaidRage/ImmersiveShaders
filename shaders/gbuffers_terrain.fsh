@@ -32,6 +32,38 @@ uniform int isEyeInWater;
    float waveSpeed = 5.0;
    float sunlightStrength = 2.0;
 
+   float timeSpeed = 2.0;
+
+   float randomVal (float inVal)
+   {
+       return fract(sin(dot(vec2(inVal, 2523.2361) ,vec2(12.9898,78.233))) * 43758.5453)-0.5;
+   }
+
+   vec2 randomVec2 (float inVal)
+   {
+       return normalize(vec2(randomVal(inVal), randomVal(inVal+151.523)));
+   }
+
+   float makeWaves(vec2 uv, float theTime, float offset)
+   {
+       float result = 0.0;
+       float direction = 0.0;
+       float sineWave = 0.0;
+       vec2 randVec = vec2(1.0,0.0);
+       float i;
+       for(int n = 0; n < 16; n++)
+       {
+           i = float(n)+offset;
+           randVec = randomVec2(float(i));
+     		direction = (uv.x*randVec.x+uv.y*randVec.y);
+           sineWave = sin(direction*randomVal(i+1.6516)+theTime*timeSpeed);
+           sineWave = smoothstep(0.0,1.0,sineWave);
+       	result += randomVal(i+123.0)*sineWave;
+       }
+       return result;
+   }
+
+
 void main(){
     float modifiedTime = frameTimeCounter * waveSpeed;
       	int id = int(BlockId + 0.5);
@@ -50,7 +82,7 @@ void main(){
 
      float distance = length(vpos)-length(vworldpos)/22;
 
-     float addend = (sin(frequency*distance-modifiedTime)+1.0) * waveStrength;
+     float addend = (sin(5*distance-modifiedTime)+1.0) * waveStrength;
      float addendWater = (sin(frequency*distance-modifiedTime)+1.0) * waveStrength;
      float addendRain = (sin(frequency*distance)+1.0) * waveStrength;
 
@@ -60,6 +92,14 @@ void main(){
 
   vec4 puddle_color = texture2D(colortex0, texcoord.st)* Color;
 
+float result;
+float result2;
+
+    result = makeWaves( vworldpos.xz*10+vec2(frameTimeCounter*2,0.0), frameTimeCounter, 0.1);
+        result2 = makeWaves(  vworldpos.xz*10-vec2(frameTimeCounter*0.8*2,0.0), frameTimeCounter*0.8+0.06, 0.26);
+        result = smoothstep(0.4,1.1,1.0-abs(result));
+        result2 = smoothstep(0.4,1.1,1.0-abs(result2));
+            result = 2.0*smoothstep(0.35,1.8,(result+result2)*0.5);
 //----------------------------------------------------OUTPUT----------------------------------------------
     vec4 Albedo = texture2D(texture, TexCoords) * Color;
 
@@ -91,8 +131,10 @@ void main(){
       #ifdef FakeCaustic
         if (isEyeInWater == 1.0){
 
+vec4 ccolor = vec4(0.2, 0.2, 1.0, 1.0)*result;
 
-            Albedo = puddle_color+(colorToAddWater*5);
+          Albedo = puddle_color+(colorToAddWater*2)+(result/2);
+
         }
         #endif
 

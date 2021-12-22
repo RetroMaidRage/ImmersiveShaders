@@ -78,9 +78,7 @@ float rainx = clamp(rainStrength, 0.0f, 1.0f)/1.0f;
 vec2 dx = dFdx(texcoord.xy);
 vec2 dy = dFdy(texcoord.xy);
 
-float wave(float n) {
-return sin(2 * PI * (n));
-}
+
 //---------------------------------------------------------------------------------------------------------------------------
 float waterH(vec3 posxz) {
 
@@ -121,6 +119,8 @@ for (int i = 1; i < 4; i++) {
 
 return amplitude*wave2+amplitude*wave;
 }
+
+
 //---------------------------------------------------------------------------------------------------------------------------
 void main() {
 	int id = int(entityId + 0.5);
@@ -131,7 +131,7 @@ vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
 vec4 fresnelColor =  FrenselTexture;
 vec4 Texture = color;
-vec4 Custom = vec4(0.6);
+vec4 Custom = vec4(0.8);
 
 	vec4 cwater = vec4(WaterTransparent)*glcolor*WaterType;
 	cwater.r = (cwater.r*1);
@@ -139,7 +139,7 @@ vec4 Custom = vec4(0.6);
 	  cwater.b = (cwater.b*0.8);
 	cwater = cwater / (cwater + 4.2) * (1.0+2.0);
 //--------------------------------------------------------------------------------------
-  float fog = length(viewPos);
+  float fog = length(viewPos.xz)/5;
 float frensel =  exp(-fog * FrensStrenght);
 
 
@@ -156,7 +156,7 @@ vec3 posxz = vworldpos.xyz;
 posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
 posxz.z += cos(posxz.x+frameTimeCounter*0.5)*0.25;
 
-float deltaPos = 0.4;
+float deltaPos = 2.8;
 float h0 = waterH(posxz);
 float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
 float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
@@ -165,6 +165,26 @@ float h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos));
 
 float xDelta = ((h1-h0)+(h0-h2))/deltaPos;
 float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
+
+    vec3 newnormal = normalize(vec3(xDelta,yDelta,1.0-xDelta*xDelta-yDelta*yDelta));
+//---------------------------------------------------------------------------------------------------------------------------
+    vec4 frag2;
+      frag2 = vec4((normal) * 0.5f + 0.5f, 1.0f);
+
+
+      vec3 bump = newnormal;
+        bump = bump;
+
+
+      float bumpmult = 0.05;
+
+      bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
+      mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+                tangent.y, binormal.y, normal.y,
+                tangent.z, binormal.z, normal.z);
+
+      frag2 = vec4(normalize(bump * tbnMatrix) * 0.5 + 0.5, 1.0);
+
 //---------------------------------------------------------------------------------------------------------------------------
  float SpecularAngle = pow(max(dot(halfDir, Normal), 0.0),specularDistance);
 
@@ -179,36 +199,22 @@ SpecularAngle = 0;
 vec4 SpecularCustom= vec4(1.0, 1.0, 1.0, 1.0)*SpecularCustomStrenght;
 vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStrenght;
 //--------------------------------------------------------------------------------------
-  vec4 outputWater = mix(fresnelColor, cwater, frensel);
-	  vec4 outputIce = mix(fresnelColor, color, frensel);
-
-    #ifdef SpecularWaterIceGlass
-   outputWater +=(SpecularAngle*SpecularTexture);
-	   outputIce += (SpecularAngle*SpecularTexture);
-    #endif
-    vec3 newnormal = normalize(vec3(xDelta,yDelta,1.0-xDelta*xDelta-yDelta*yDelta));
-
-  	vec4 frag2;
-  		frag2 = vec4((normal) * 0.5f + 0.5f, 1.0f);
-
-  	if (iswater > 0.9) {
-  		vec3 bump = newnormal;
-  			bump = bump;
 
 
-  		float bumpmult = 0.05;
 
-  		bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
-  		mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-  							tangent.y, binormal.y, normal.y,
-  							tangent.z, binormal.z, normal.z);
 
-  		frag2 = vec4(normalize(bump * tbnMatrix) * 0.5 + 0.5, 1.0);
-  	}
-/* DRAWBUFFERS:0 */
+
+    vec4 outputWater = mix(fresnelColor, cwater, frensel)+(xDelta * yDelta);
+      vec4 outputIce = mix(fresnelColor, color, frensel);
+
+      #ifdef SpecularWaterIceGlass
+     outputWater +=(SpecularAngle*SpecularTexture)*(xDelta * yDelta)*5;
+       outputIce += (SpecularAngle*SpecularTexture);
+      #endif
+/* DRAWBUFFERS:024 */
 if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor
-gl_FragData[1] = vec4(0.0);
+gl_FragData[1] = frag2;
 gl_FragData[2] = vec4(0.0);
 }else{
 gl_FragData[0] = outputIce; //gcolor

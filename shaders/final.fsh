@@ -114,6 +114,9 @@ const int colortex2Format = RGB16;
 
 //#define WarmEffect
 
+#define UnderWater
+
+#define SnakingCamera
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
@@ -209,6 +212,20 @@ vec4 lensflarealbedo = texture(colortex0, offset);
     return result;
 }
 
+
+vec2 UnderWaterScreen(vec2 uv){
+float Xaxis = uv.x*15 + frameTimeCounter;
+float Yaxis = uv.y*15 + frameTimeCounter;
+      uv.y += cos(Xaxis+Yaxis) *0.01 * cos(Yaxis);
+      uv.x += sin(Xaxis-Yaxis) *0.01 * sin(Yaxis);
+      return uv;
+}
+
+vec2 snakingCamera(vec2 uv){
+float Yaxis = uv.x + frameTimeCounter;
+      uv.x += cos(Yaxis) *0.01 * cos(Yaxis);
+      return uv;
+}
 //-------------------------------------------------MAIN------------------------------------------------------
 
 void main() {
@@ -244,6 +261,7 @@ color.r = texture(colortex0, uv - ChromaOffset).r;
     color.b = texture(colortex0, uv + ChromaOffset).b;
     #endif
 //------------------------------------------------------------------------------------------------------
+
 //fast
   float Pi = 6.28318530718; // Pi*2
 
@@ -541,6 +559,16 @@ if (isBiomeDesert == 1){
      	 	 color /=1.35;
 }
 #endif
+
+#ifdef UnderWater
+
+   uv = UnderWaterScreen(texcoord.st);
+   if (isEyeInWater > 0.9) {
+color += texture2D(colortex0, uv);
+color /= 2.5;
+}
+#endif
+
 
 gl_FragColor = color;
 

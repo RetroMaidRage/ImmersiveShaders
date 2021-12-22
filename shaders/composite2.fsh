@@ -42,7 +42,8 @@ void main() {
     vec4 color = texture2D(gcolor, texcoord);
 
 #ifdef CloudySky
-
+const int noiseTextureResolution = 512;
+#endif
     vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
     vec3 clipPos = screenPos * 2.0 - 1.0;
     vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
@@ -94,7 +95,6 @@ color = color + vec4(Clouds, 1.0);
 }
 
 
-#endif
 /* DRAWBUFFERS:0 */
     gl_FragData[0] = color;
 }
