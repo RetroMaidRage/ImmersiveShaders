@@ -226,6 +226,34 @@ float Yaxis = uv.x + frameTimeCounter;
       uv.x += cos(Yaxis) *0.01 * cos(Yaxis);
       return uv;
 }
+
+const float SAMPLES = 21.;
+
+
+// 2x1 hash. Used to jitter the samples.
+float hashs( vec2 p ){ return fract(sin(dot(p, vec2(41, 289)))*45758.5453); }
+
+
+// Light offset.
+//
+// I realized, after a while, that determining the correct light position doesn't help, since
+// radial blur doesn't really look right unless its focus point is within the screen boundaries,
+// whereas the light is often out of frame. Therefore, I decided to go for something that at
+// least gives the feel of following the light. In this case, I normalized the light position
+// and rotated it in unison with the camera rotation. Hacky, for sure, but who's checking? :)
+vec3 lOff(){
+
+    vec2 u = sin(vec2(1.57, 0) - frameTimeCounter/2.);
+    mat2 a = mat2(u, -u.y, u.x);
+
+    vec3 l = normalize(vec3(1.5, 1., -0.5));
+    l.xz = a * l.xz;
+    l.xy = a * l.xy;
+
+    return l;
+
+}
+
 //-------------------------------------------------MAIN------------------------------------------------------
 
 void main() {
@@ -395,8 +423,11 @@ previousPosition /= previousPosition.w;
         if ((worldTime < 14000 || worldTime > 22000) && sunPosition.z < 0)
 
           {
+
 vec2 texCoord = texcoord.st;
+
 vec2 delta = (texCoord - SUNRAYS_TYPE) * GR_DENSITY / float(SUNRAYS_SAMPLES);
+
 float decay = -sunPosition.z / 1000.0;
 vec3 colorGR = vec3(0.0);
 vec3 sample = vec3(0.0);
@@ -568,6 +599,7 @@ color += texture2D(colortex0, uv);
 color /= 2.5;
 }
 #endif
+
 
 
 gl_FragColor = color;

@@ -82,7 +82,7 @@ void main(){
 
      float distance = length(vpos)-length(vworldpos)/22;
 
-     float addend = (sin(5*distance-modifiedTime)+1.0) * waveStrength;
+     float addend = (sin(10*distance-modifiedTime)+1.0) * waveStrength;
      float addendWater = (sin(frequency*distance-modifiedTime)+1.0) * waveStrength;
      float addendRain = (sin(frequency*distance)+1.0) * waveStrength;
 

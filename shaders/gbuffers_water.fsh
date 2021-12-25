@@ -62,13 +62,21 @@ varying float iswater;
 #define specularTextureStrenght 0.7 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 #define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //---------------------------------------------------------------------------------------------------------------------------
-
+float timeSpeed = 2.0;
 float     GetDepthLinear(in vec2 coord) {
    return 2.0f * near * far / (far + near - (2.0f * texture2D(depthtex0, coord).x - 1.0f) * (far - near));
 }
 
 float linearDepth(float depth){
 	return 2.0 * (near * far) / (far + near - (depth) * (far - near));
+}
+
+vec2 UnderWaterScreen(vec2 uv){
+float Xaxis = uv.x*15 + frameTimeCounter;
+float Yaxis = uv.y*15 + frameTimeCounter;
+      uv.y += cos(Xaxis+Yaxis) *0.01 * cos(Yaxis);
+      uv.x += sin(Xaxis-Yaxis) *0.01 * sin(Yaxis);
+      return uv;
 }
 //---------------------------------------------------------------------------------------------------------------------------
 float PI = 3.14;
@@ -121,6 +129,8 @@ return amplitude*wave2+amplitude*wave;
 }
 
 
+
+
 //---------------------------------------------------------------------------------------------------------------------------
 void main() {
 	int id = int(entityId + 0.5);
@@ -131,13 +141,14 @@ vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
 vec4 fresnelColor =  FrenselTexture;
 vec4 Texture = color;
-vec4 Custom = vec4(0.8);
+vec4 Custom = vec4(0.92);
 
 	vec4 cwater = vec4(WaterTransparent)*glcolor*WaterType;
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
-	  cwater.b = (cwater.b*0.8);
+	  cwater.b = (cwater.b*0.6);
 	cwater = cwater / (cwater + 4.2) * (1.0+2.0);
+
 //--------------------------------------------------------------------------------------
   float fog = length(viewPos.xz)/5;
 float frensel =  exp(-fog * FrensStrenght);
@@ -154,9 +165,9 @@ vec3 reflectDir = reflect(lightDir, viewDir);
 vec3 posxz = vworldpos.xyz;
 
 posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
-posxz.z += cos(posxz.x+frameTimeCounter*0.5)*0.25;
+posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
 
-float deltaPos = 2.8;
+float deltaPos = 3.8;
 float h0 = waterH(posxz);
 float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
 float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
@@ -203,12 +214,11 @@ vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStren
 
 
 
-
     vec4 outputWater = mix(fresnelColor, cwater, frensel)+(xDelta * yDelta);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 
       #ifdef SpecularWaterIceGlass
-     outputWater +=(SpecularAngle*SpecularTexture)*(xDelta * yDelta)*5;
+     outputWater +=(SpecularAngle*(SpecularTexture+cwater))*(xDelta * yDelta)*25;
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
 /* DRAWBUFFERS:024 */
