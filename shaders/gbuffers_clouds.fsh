@@ -16,7 +16,7 @@ varying vec4 glcolor;
 #define CLOUD_RENDERING 0.7 //[0.7 1 0]
 #define CLOUD_AMMOUNT 1 ///[1 2 3 4 5]
 #define CLOUD_SETTINGS Default //[Clear Default]
- 
+
 void main(){
 	float Clear = 0.7;
 	vec4 Default = vec4(glcolor);

@@ -14,7 +14,7 @@ profile.Ultra+ = §6Ultra§c+
 
 value.ColorSettings.Summertime = §6Summer§atime
 value.ColorSettings.Default = §eDefault
-
+value.ColorSettings.Composition = §1Composition
 option.DISORT_THREASHOLD=ShadowSmooth
 option.Chromation_Abberation=ChromationAbberation
 option.ChromaOffset=Offset

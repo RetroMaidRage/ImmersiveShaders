@@ -72,10 +72,9 @@ const float ambientOcclusionLevel = 0.0f;
 #define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
-#define ColorSettings Summertime //[Summertime Default]
-#define SkyColorType DynamicSkyColor //[DynamicSkyColor StaticSkyColor]
+#define ColorSettings Summertime //[Summertime Default Composition]
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
-
+#define SkyLightingStrenght 1 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 #define VanillaAmbientOcclusion
 #define specularLight
 
@@ -84,38 +83,39 @@ const float ambientOcclusionLevel = 0.0f;
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
-
+//--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
-    	int id = int(entityId + 0.5);
+//--------------------------------------------------------------------------------------------
 
-    vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
-  	vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
-  	vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
-    vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 
+vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
+vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
+vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
+vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
+//--------------------------------------------------------------------------------------------
     float get_linear_depth(in float depth)
     {
         return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
     }
-
+//--------------------------------------------------------------------------------------------
 
     vec3 localToScreen(vec3 pos) {
       vec3 data = mat3(gbufferProjection) * pos;
       data += gbufferProjection[3].xyz;
       return ((data.xyz / -pos.z) / 2.0 + 0.5).xyz;
     }
-
+//--------------------------------------------------------------------------------------------
     vec3 screenToLocal(vec3 posDepth) {
       vec4 result = vec4(posDepth, 1.0) * 2.0 - 1.0;
       result      = (gbufferProjectionInverse * result);
       result /= result.w;
       return result.xyz;
     }
-
+//--------------------------------------------------------------------------------------------
     vec3 raytraceScreen(vec3 screenPosition, vec3 localNormal) {
     //  https://github.com/williambulin/SSR-Minecraft
       vec3 startPosition  = screenToLocal(screenPosition);
@@ -151,45 +151,44 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
 
       return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
     }
-
+//--------------------------------------------------------------------------------------------
 float AdjustLightmapTorch(in float torch) {
 
-//if block {
-//}
        float K =LIGHT_STRENGHT;
        float P = 8.06f;
         return K * pow(torch, P);
 }
-
+//--------------------------------------------------------------------------------------------
 float AdjustLightmapSky(in float sky){
     float sky_2 = sky * sky;
     return sky * sky_2;
 }
-
+//--------------------------------------------------------------------------------------------
 vec2 AdjustLightmap(in vec2 Lightmap){
     vec2 NewLightMap;
     NewLightMap.x = AdjustLightmapTorch(Lightmap.x);
     NewLightMap.y = AdjustLightmapSky(Lightmap.y);
     return NewLightMap;
 }
-
+//--------------------------------------------------------------------------------------------
 vec3 GetLightmapColor(in vec2 Lightmap){
     Lightmap = AdjustLightmap(Lightmap);
+
+
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
-  const vec3 StaticSkyColor = vec3(0.05f, 0.15f, 0.3f);
-
     vec3 TorchLighting = Lightmap.x * TorchColor;
-    vec3 SkyLighting = Lightmap.y * SkyColorType;
+    vec3 SkyLighting = Lightmap.y * DynamicSkyColor * SkyLightingStrenght;
+
     vec3 LightmapLighting = TorchLighting + SkyLighting;
+
     return LightmapLighting;
 }
-
+//--------------------------------------------------------------------------------------------
 float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords) {
     return step(SampleCoords.z - 0.001f, texture2D(ShadowMap, SampleCoords.xy).r);
 }
-
-//Calculates shadow coordinates
+//--------------------------------------------------------------------------------------------
 vec3 calculate_shadow_coord(vec4 world_position)
 {
     vec4 shadow_projection = shadowProjection * shadowModelView * world_position;  //Convert world position into position in shadow projection space
@@ -198,18 +197,15 @@ vec3 calculate_shadow_coord(vec4 world_position)
     vec3 shadow_coords = shadow_projection.xyz * 0.5 + 0.5; //Convert it into screen space
     return shadow_coords;
 }
-
+//--------------------------------------------------------------------------------------------
 float calculate_shadow(vec3 shadow_coords)
 {
    return step(shadow_coords.z -  0.001f, texture2D(shadowtex0, shadow_coords.xy).x);
 }
-
-//Calculates shadow coordinates
-
-
+//--------------------------------------------------------------------------------------------
 vec3 TransparentShadow(in vec3 SampleCoords){
 
-  vec3 NfogColor = fogColor*1.5;
+vec3 NfogColor = fogColor*1.5;
 
 vec3 Summertime =  NfogColor;
 Summertime.r = NfogColor.r*2;
@@ -217,6 +213,9 @@ Summertime.r = NfogColor.r*2;
 vec3 Default = fogColor*1.5;
 Default.r +=0.5;
 
+vec3 Composition = NfogColor*1.5;
+Composition.r +=2.8;
+Composition.b +=1.2;
 
     float ShadowVisibility0 = Visibility(shadowtex0, SampleCoords);
     float ShadowVisibility1 = Visibility(shadowtex1, SampleCoords);
@@ -228,11 +227,11 @@ float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
 
     return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0)*ColorSettings, ShadowVisibility0);
 }
-
+//--------------------------------------------------------------------------------------------
 
 const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
 const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
-
+//--------------------------------------------------------------------------------------------
 vec3 GetShadow(float depth) {
     vec3 ClipSpace = vec3(TexCoords, depth) * 2.0f - 1.0f;
     vec4 ViewW = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
@@ -261,7 +260,7 @@ vec3 GetShadow(float depth) {
     ShadowAccum /= TotalSamples;
     return ShadowAccum;
 }
-
+//--------------------------------------------------------------------------------------------
 
 
 float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
@@ -271,7 +270,7 @@ float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
    float sampleShadow = texture2D(shadowtex0, shadowPos.xy).r;
    return sampleShadow;
 }
-
+//--------------------------------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -322,7 +321,7 @@ float volumetric_light(vec3 viewPos1, vec4 shadowPos)
     return accum_density*0.03;
 }
 #endif
-////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
 
@@ -340,7 +339,7 @@ void main(){
     vec3 LightmapColor = GetLightmapColor(Lightmap);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
 
-////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------------
 #ifdef specularLight
 
 vec3 ClipSpacee = vec3(TexCoords, Depth) * 2.0f - 1.0f;
@@ -376,14 +375,10 @@ if (rainStrength == 1){
 
 
 #endif
-////////////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////////////
-
+//--------------------------------------------------------------------------------------------
 float ShadowOn = NdotL;
 float ShadowOff = 0.25;
-
+//--------------------------------------------------------------------------------------------
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif

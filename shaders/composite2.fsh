@@ -37,6 +37,7 @@ const int colortex2Format = RGB16;
 //--------------------------------------------DEFINE------------------------------------------
 #define CloudySky
 
+
 void main() {
 
     vec4 color = texture2D(gcolor, texcoord);
@@ -81,6 +82,13 @@ float cloudPreFinalnoise2 = float(mix(cloudNoise2, cloudNoise2pt2, cloudNoise3pt
 float cloudFinalNoise = float(mix(cloudPreFinalnoise, cloudNoise2pt, cloudNoise3pt));
 float cloudFinalNoise2 = float(mix(cloudFinalNoise, cloudPreFinalnoise2, cloudPreFinalnoise));
 
+float Puddless = texture2D(noisetex, (FinalDirection.xz*2)).x;
+Puddless += texture2D(noisetex,(FinalDirection.xz*8)).x;
+Puddless += texture2D(noisetex, (FinalDirection.xz/6)).x;
+  Puddless += texture2D(noisetex, (FinalDirection.xz*4)).x;
+Puddless += texture2D(noisetex, (FinalDirection.xz/2)).x;
+
+float Puddles = max((Puddless-2.0),0.0);
 
     vec4 cloudColor = texture2D(gaux3, vec2(0.5));
 

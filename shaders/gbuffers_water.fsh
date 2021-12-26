@@ -141,7 +141,7 @@ vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
 vec4 fresnelColor =  FrenselTexture;
 vec4 Texture = color;
-vec4 Custom = vec4(0.92);
+vec4 Custom = vec4(0.87);
 
 	vec4 cwater = vec4(WaterTransparent)*glcolor*WaterType;
 	cwater.r = (cwater.r*1);

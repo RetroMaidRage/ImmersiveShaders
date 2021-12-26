@@ -137,3 +137,13 @@ float simplex2D(vec2 p ){
 float getnoise(vec2 pos) {
 	return abs(fract(sin(dot(pos ,vec2(18.9898f,28.633f))) * 4378.5453f));
 }
+
+float randomVal (float inVal)
+{
+		return fract(sin(dot(vec2(inVal, 2523.2361) ,vec2(12.9898,78.233))) * 43758.5453)-0.5;
+}
+
+vec2 randomVec2 (float inVal)
+{
+		return normalize(vec2(randomVal(inVal), randomVal(inVal+151.523)));
+}
