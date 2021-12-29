@@ -45,6 +45,8 @@ void main() {
 #ifdef CloudySky
 const int noiseTextureResolution = 512;
 #endif
+
+
     vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
     vec3 clipPos = screenPos * 2.0 - 1.0;
     vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
@@ -55,6 +57,11 @@ const int noiseTextureResolution = 512;
 
     vec3 Clouds = vec3(0.0);
     vec3 FinalDirection = vec3(0.0);
+
+
+
+
+
 
     if(texture2D(depthtex0, texcoord).r == 1.0) {
 
