@@ -39,7 +39,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 
   #ifdef waving_grass
-    if (mc_Entity.x == 10002.0 || mc_Entity.x == 10003.0 || mc_Entity.x == 10004.0) {
+    if (mc_Entity.x == 10002.0 || mc_Entity.x == 10003.0 || mc_Entity.x == 10004.0 || mc_Entity.x == 10015.0 ) {
 
       float magnitude = sin((tick * pi / (28.0)) + vworldpos.x + vworldpos.z) * 0.055 * (1.0 + rainStrength);
     //   vpos.x += sin((tick * pi / (28.0 * waving_grass_speed)) + (vworldpos.x + -5.0) * 0.1 + (vworldpos.z + 10.0) * 0.1) * magnitude;

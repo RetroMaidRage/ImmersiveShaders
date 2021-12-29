@@ -1,5 +1,6 @@
 #version 120
 #include "/files/filters/noises.glsl"
+#include "/files/filters/blur.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -152,7 +153,7 @@ vec4 Custom = vec4(0.87);
 //--------------------------------------------------------------------------------------
   float fog = length(viewPos.xz)/5;
 float frensel =  exp(-fog * FrensStrenght);
-
+        vec2 GetSreenRes = vec2(viewWidth, viewHeight);
 
 vec3 ShadowLightPosition = normalize(shadowLightPosition);
 vec3 Normal = normalize(normal);
@@ -212,7 +213,8 @@ vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStren
 //--------------------------------------------------------------------------------------
 
 
-
+vec4 GlassOutput = texture2D(colortex0, texcoord.st);
+GlassOutput *= GaussBlur(colortex0, GetSreenRes);
 
     vec4 outputWater = mix(fresnelColor, cwater, frensel)+(xDelta * yDelta);
       vec4 outputIce = mix(fresnelColor, color, frensel);
@@ -222,10 +224,15 @@ vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStren
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
 /* DRAWBUFFERS:024 */
+
+if (id == 10006) {
+  gl_FragData[0] = outputIce*outputIce;
+}
 if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor
 gl_FragData[1] = frag2;
 gl_FragData[2] = vec4(0.0);
-}else{
-gl_FragData[0] = outputIce; //gcolor
+}
+if (id == 10014) {
+gl_FragData[0] = outputIce*outputIce; //gcolor
 }}

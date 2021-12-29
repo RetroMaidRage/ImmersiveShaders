@@ -7,6 +7,7 @@
 
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
+#include "/files/filters/blur.glsl"
 
 #include "/files/antialiasing/fxaa.glsl"
 
@@ -38,6 +39,7 @@ uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
 uniform vec3 skyColor;
+uniform vec3 SkyPos;
 uniform float frameTimeCounter;
 uniform int isEyeInWater;
 uniform mat4 gbufferModelView;
@@ -120,11 +122,6 @@ const int colortex2Format = RGB16;
 
    float getDepth(vec2 coord) {
        return 2.0 * near * far / (far + near - (2.0 * texture2D(depthtex0, coord).x - 1.0) * (far - near));
-   }
-
-   float normpdf(in float x, in float sigma)
-   {
-   	return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
    }
 
    float timefract = worldTime;
@@ -253,8 +250,20 @@ vec3 lOff(){
     return l;
 
 }
-
-//-------------------------------------------------MAIN------------------------------------------------------
+vec3 applyFog2( in vec3  rgb,      // original color of the pixel
+               in float distance, // camera to point distance
+               in vec3  rayDir,
+							 							 in float coeff,   // camera to point vector
+               in vec3  sunDir )  // sun light direction
+{
+    float fogAmount = 1.0 - exp( -distance*coeff );
+    float sunAmount = max( dot( rayDir, sunDir ), 0.0 );
+    vec3  fogColor  = mix( vec3(0.5,0.6,1.7), // bluish
+                           vec3(1.0,0.9,0.7), // yellowish
+                           pow(sunAmount,1.0) );
+    return mix( rgb, fogColor, fogAmount );
+}
+//--------------------------------------------MAIN------------------------------------------------------
 
 void main() {
     //vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
@@ -551,6 +560,16 @@ vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDes
     if (isTerrain) color.rgb += colorfog/GroundScreenSpaceFogStrenght;
 #endif
 // color = 1.0 - exp(-1.0 * color);
+
+float distancefog = length(world_position.xyz);
+		vec3 fog = vec3(0, 0, 0);
+    vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z)); // Ray Direction
+//color += applyFog(fog, distancefog, 1.1, 0.01, normalize(cameraPosition), normalize(rd));
+
+vec3 SunVector = normalize(sunPosition+world_position.yxz);
+vec3 SunVector2 = normalize(sunPosition);
+vec4 colfogggg = texture2D(colortex0, texcoord.st);
+colfogggg.rgb += applyFog2(fog, distancefog,  normalize(rd), 0.005, SunVector2);
 //------------------------------------------------------------------------------------------------------------------
 #ifdef CinematicBorder
 float transparent = 10.0;

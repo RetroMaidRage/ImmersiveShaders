@@ -12,6 +12,7 @@ uniform sampler2D texture;
 varying vec4 texcoord;
 in  float BlockId;
 uniform sampler2D colortex0;
+uniform sampler2D colortex1;
 uniform float frameTimeCounter;
 uniform float viewWidth;
 uniform float viewHeight;
@@ -28,14 +29,24 @@ uniform int isEyeInWater;
 #define FakeCloudShadows
 
 #define Rain_Puddle
-#define TerrainGradient
+
 #define PuddleStrenght 0.85 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+
+#define TerrainGradient
 #define GradientStrenght 0.7 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define GradientTerrainStrenght 0.7 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+
 //#define MoreLayer
 
-#define GradientColorRed 0.5
-#define GradientColorGreen 0.5
-#define GradientColorBlue 0.5
+#define LeavesGradient
+#define GradientLeavesStrenght 1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+
+//#define GrassGradient
+#define GradientGrassStrenght 1 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+
+#define GradientColorRed 0.5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define GradientColorGreen 0.5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define GradientColorBlue 0.5 ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 //#define UseGradientColor
 
 #define waveStrength 0.02; ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
@@ -67,11 +78,65 @@ uniform int isEyeInWater;
        return result;
    }
 //--------------------------------------------------------------------------------------------------------
+float waterH(vec3 posxz) {
+
+float wave = 10.0;
+
+
+float factor = 2.0;
+float amplitude = 0.2;
+float speed = 5.5;
+float size = 0.2;
+
+float px = posxz.x/50.0 + 250.0;
+float py = posxz.z/50.0  + 250.0;
+
+float fpx = abs(fract(px*20.0)-0.5)*2.0;
+float fpy = abs(fract(py*20.0)-0.5)*2.0;
+
+float d = length(vec2(fpx,fpy));
+
+for (int i = 1; i < 4; i++) {
+	wave -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
+	factor /= 2;
+}
+
+factor = 1.0;
+px = -posxz.x/50.0 + 250.0;
+py = -posxz.z/150.0 - 250.0;
+
+fpx = abs(fract(px*20.0)-0.5)*2.0;
+fpy = abs(fract(py*20.0)-0.5)*2.0;
+
+d = length(vec2(fpx,fpy));
+float wave2 = 0.0;
+for (int i = 1; i < 4; i++) {
+	wave2 -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
+	factor /= 2;
+}
+
+return amplitude*wave2+amplitude*wave;
+}
 
 void main(){
 //--------------------------------------------------------------------------------------------------------
 float modifiedTime = frameTimeCounter * waveSpeed;
 int id = int(BlockId + 0.5);
+
+vec3 posxz = vworldpos.xyz;
+
+posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
+posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
+
+float deltaPos = 0.25;
+float h0 = waterH(posxz);
+float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
+float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
+float h3 = waterH(posxz + vec3(0.0,0.0,deltaPos));
+float h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos));
+
+float xDelta = ((h1-h0)+(h0-h2))/deltaPos;
+float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
 //----------------------------------------------------SPECULAR----------------------------------------------
   vec3 ShadowLightPosition = normalize(shadowLightPosition);
   vec3 NormalDir = normalize(Normal);
@@ -109,7 +174,7 @@ result = 2.0*smoothstep(0.35,1.8,(result+result2)*0.5);
 vec4 Albedo = texture2D(texture, TexCoords) * Color;
 //----------------------------------------FakeCloudShadows------------------------------------------------
 
-if (id == 10010.0 || id == 10002.0 || id == 10003.0 || id == 10004.0 || id == 10007.0 || id == 10008.0) { //if id = block
+if (id == 10010.0 || id == 10002.0 || id == 10003.0 || id == 10004.0 || id == 10007.0 || id == 10008.0 || id == 10015.0) { //if id = block
 
 #ifdef FakeCloudShadows
 if (rainStrength == 0) {
@@ -136,36 +201,82 @@ Noise += texture2D(noisetex, (rainCoord.xy*6)).x;
 Noise += texture2D(noisetex, (rainCoord.xy/4)).x;
 Noise += texture2D(noisetex, (rainCoord.xy*8)).x;
 #endif
+
 float Fac = max(Noise-2.0,0.0);
+
 vec4 cmix;
 float OtherFac;
-//--------------------------------------------------------------------------------------------------------
+//----------------------------------------PUDDLE---------------------------------------------------------
 #ifdef Rain_Puddle
 
  OtherFac = (1.0 - (pow(PuddleStrenght,Fac))) * (1.0 + rainStrength);
 
-vec4 PuddleColor = texture2D(colortex0, texcoord.st)+(SpecularAngle*Albedo)*5;
+vec4 PuddleColor = texture2D(colortex0, texcoord.st)/22+((xDelta * yDelta*Albedo))+(SpecularAngle*Albedo)*15;
+
+PuddleColor.r +=0.5;
+PuddleColor.g +=0.5;
+PuddleColor.b +=0.5;
+
 
  cmix = mix(Albedo,PuddleColor, OtherFac);
+cmix +=SpecularAngle*(xDelta * yDelta*Albedo)*2;
+
  if (rainStrength == 1) {
 Albedo = cmix;
 }
 #endif
-//--------------------------------------------------------------------------------------------------------
+//-------------------------------------------TerrainGradient---------------------------------------------
 #ifdef TerrainGradient
- OtherFac = (1.0 - (pow(GradientStrenght,Fac))) / (1.0 + rainStrength);
+ OtherFac = (1.0 - (pow(GradientTerrainStrenght,Fac))) / (1.0 + rainStrength);
 
 vec4 GradientColor = texture2D(colortex0, texcoord.st);
 
 #ifdef UseGradientColor
 GradientColor.r = GradientColorRed; GradientColor.g = GradientColorGreen; GradientColor.b = GradientColorBlue;
 #endif
-
- cmix = mix(Albedo,GradientColor, OtherFac+0.05);
+cmix = mix(Albedo,GradientColor, OtherFac+0.05);
+ if (rainStrength == 0) {
 Albedo = cmix;
+}
+
 #endif
 
-}//if id = block
+//-------------------------------------------LeavesGradient---------------------------------------------
+#ifdef LeavesGradient
+if (id == 10015.0 ){
+
+
+  GradientColor.r+=1.8;
+    GradientColor.g+=0.2;
+     OtherFac = (1.0 - (pow(GradientLeavesStrenght,Fac))) * (1.0 + rainStrength);
+     OtherFac+=0.07;
+  cmix = mix(Albedo,GradientColor, OtherFac);
+   if (rainStrength == 0) {
+ Albedo = cmix;
+}
+}
+#endif
+
+#ifdef GrassGradient
+if (id == 10002.0 ){
+
+  GradientColor.r+=1.8;
+    GradientColor.g+=1.2;
+     OtherFac = (1.0 - (pow(GradientGrassStrenght,Fac))) * (1.0 + rainStrength);
+     OtherFac+=0.025;
+  cmix = mix(Albedo,GradientColor, OtherFac);
+     if (rainStrength == 0) {
+ Albedo = cmix;
+}
+}
+#endif
+}
+//-------------------------------------------OUTPUT--------------------------------------------
+
+
+
+
+
 //----------------------------------------SPECULAR--------------------------------------------------------
 if (id == 10008.0) {
 
@@ -180,6 +291,8 @@ Albedo = puddle_color+(colorToAddWater*2)+(result/2);
 
 }
 #endif
+
+
 //--------------------------------------------------------------------------------------------------------
 
     /* DRAWBUFFERS:012 */
