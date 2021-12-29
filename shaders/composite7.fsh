@@ -39,7 +39,7 @@ varying vec2 TexCoords;
 //-----------------------------------------DEFINE------------------------------------------------
 #define Fog
 #define GroundFog
-#define FogDestiny 0.0005  ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define FogDestiny 0.005  ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 #define GroundFogDestiny 0.025  ///[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
 #define WaterFog
@@ -100,6 +100,14 @@ vec3 colorDepth = texture2D(gcolor, texcoord.st).rgb;
 	vec3 viewPos = tmp.xyz / tmp.w;
 	vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
 //----------------------------------------------------------------------------------------------
+	vec3 P_world = (gbufferModelViewInverse * vec4(viewPos,1.0)).xyz + cameraPosition;
+	vec2 rainCoord = (P_world.xz/100000);
+	float Noise = texture2D(noisetex, fract(rainCoord.xy*8)).x;
+	Noise += texture2D(noisetex, (rainCoord.xy*4)).x;
+	Noise += texture2D(noisetex, (rainCoord.xy*2)).x;
+	Noise += texture2D(noisetex, (rainCoord.xy/2)).x;
+	float Fac = max(Noise-2.0,0.0);
+//----------------------------------------------------------------------------------------------
 	vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 //----------------------------------------------------------------------------------------------
 float distancefog = length(world_position.xyz);
@@ -130,15 +138,9 @@ vec3 color = texture2D(gcolor, texcoord.st).rgb;
 color += applyFog(fog, distancefog,  rd, FogDestiny, L);
 #endif
 #ifdef GroundFog
-vec3 P_world = (gbufferModelViewInverse * vec4(viewPos,1.0)).xyz + cameraPosition;
-vec2 rainCoord = (P_world.xz/100000);
-float Noise = texture2D(noisetex, fract(rainCoord.xy*8)).x;
-Noise += texture2D(noisetex, (rainCoord.xy*4)).x;
-Noise += texture2D(noisetex, (rainCoord.xy*2)).x;
-Noise += texture2D(noisetex, (rainCoord.xy/2)).x;
-float Fac = max(Noise-2.0,0.0);
 color += applyFogGround(fog, distancefog, normalize(cameraPosition), rd-Fac, L);
 #endif
 //----------------------------------------------------------------------------------------------
+/* DRAWBUFFERS:02 */
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }
