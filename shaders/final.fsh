@@ -560,7 +560,7 @@ vec3 colorfog = mix(color.rgb, customFogColor, fogDistance)/GroundScreenSpaceDes
     if (isTerrain) color.rgb += colorfog/GroundScreenSpaceFogStrenght;
 #endif
 // color = 1.0 - exp(-1.0 * color);
-
+vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 float distancefog = length(world_position.xyz);
 		vec3 fog = vec3(0, 0, 0);
     vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z)); // Ray Direction
@@ -569,7 +569,7 @@ float distancefog = length(world_position.xyz);
 vec3 SunVector = normalize(sunPosition+world_position.yxz);
 vec3 SunVector2 = normalize(sunPosition);
 vec4 colfogggg = texture2D(colortex0, texcoord.st);
-colfogggg.rgb += applyFog2(fog, distancefog,  normalize(rd), 0.005, SunVector2);
+colfogggg.rgb += applyFog2(fog, distancefog,  normalize(rd), 0.005, L);
 //------------------------------------------------------------------------------------------------------------------
 #ifdef CinematicBorder
 float transparent = 10.0;
