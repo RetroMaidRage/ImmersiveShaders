@@ -51,8 +51,8 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 
-vec3 sunsetFogColWorld = vec3(1.0,0.9,0.7);
-vec3 nightFogColWorld = vec3(1.0,0.9,0.7);
+vec3 sunsetFogColWorld = vec3(1.0,0.9,0.7); //2
+vec3 nightFogColWorld = vec3(0.5,0.6,1.7); //2
 
 
 vec3 sunsetFogColSun = vec3(0.5,0.6,1.7);
@@ -101,7 +101,7 @@ vec3 colorDepth = texture2D(gcolor, texcoord.st).rgb;
 	vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
 //----------------------------------------------------------------------------------------------
 	vec3 P_world = (gbufferModelViewInverse * vec4(viewPos,1.0)).xyz + cameraPosition;
-	vec2 rainCoord = (P_world.xz/100000);
+	vec2 rainCoord = (P_world.xz/100000)+frameTimeCounter/10000;
 	float Noise = texture2D(noisetex, fract(rainCoord.xy*8)).x;
 	Noise += texture2D(noisetex, (rainCoord.xy*4)).x;
 	Noise += texture2D(noisetex, (rainCoord.xy*2)).x;
