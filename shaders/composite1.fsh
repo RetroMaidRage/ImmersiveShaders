@@ -47,7 +47,7 @@ void main() {
 
 
 //-------------------------------------------------------------------------------------------
-//color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * (rainStrength*2) / far, 1.0));
+color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * (rainStrength*2) / far, 1.0));
 color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
 //-------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
