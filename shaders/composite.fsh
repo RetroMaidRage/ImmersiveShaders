@@ -400,7 +400,14 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
 
   vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
     vec3 DiffuseAndSpecular = Diffuse + specular;
+  float  water =  texture2D(colortex2, texcoord).r * 255;
 
+
+  	if(int(water) == 1 ) {
+      Diffuse += specular;
+      }else{
+              Diffuse += 0;
+      }
 //Diffuse += volumetric_light(viewPos1, shadowPos);
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0);

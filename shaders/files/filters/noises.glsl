@@ -134,6 +134,21 @@ float simplex2D(vec2 p ){
     return dot(n,h)*140.;
 }
 
+float Cloudrand(  vec2 n) {
+ return fract(sin(dot(n, vec2(0.360,0.690))) * 1001.585);
+}
+
+float Cloudnoise( vec2 p){
+	vec2 ip = floor(p);
+	vec2 u = fract(p);
+ u = u*u*(3.0-2.0*u);
+
+	float res = mix(
+	 mix(Cloudrand(ip),Cloudrand(ip+vec2(1.0,0.0)),u.x),
+	 mix(Cloudrand(ip+vec2(0.0,1.0)),Cloudrand(ip+vec2(1.0,1.0)),u.x),u.y);
+ return res*res;
+}
+
 float getnoise(vec2 pos) {
 	return abs(fract(sin(dot(pos ,vec2(18.9898f,28.633f))) * 4378.5453f));
 }

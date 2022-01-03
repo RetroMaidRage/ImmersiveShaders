@@ -223,7 +223,7 @@ GlassOutput *= GaussBlur(colortex0, GetSreenRes);
      outputWater +=(SpecularAngle*(SpecularTexture+cwater))*(xDelta * yDelta)*25;
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
-/* DRAWBUFFERS:024 */
+/* DRAWBUFFERS:01 */
 
 if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
