@@ -257,7 +257,9 @@ vec3 applyFog2( in vec3  rgb,      // original color of the pixel
     return mix( rgb, fogColor, fogAmount );
 }
 //--------------------------------------------MAIN------------------------------------------------------
-
+float H2 (in vec2 st) {
+    return fract(sin(dot(st,vec2(12.9898,8.233))) * 43758.5453123);
+}
 void main() {
     //vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
 vec3 SunPosNormal = normalize(sunPosition);
@@ -416,38 +418,34 @@ previousPosition /= previousPosition.w;
 
   		vec2 Godrays = LightPos*0.5+0.5;
       float threshold = 0.99 * far;
-//
-      vec2 Crespecular = sunPosition.xy / -sunPosition.z;
-      Crespecular.y *= aspectRatio;
-  Crespecular = (Crespecular + 1.0)/2.0;
-//
+vec2 tc = texcoord.st;
+vec2 delta = (tc - SUNRAYS_TYPE) * GR_DENSITY / float(SUNRAYS_SAMPLES);
+float decay = -sunPosition.z / 1000.0;
+
+float dither = bayer256(tc);
 
         if ((worldTime < 14000 || worldTime > 22000) && sunPosition.z < 0)
 
           {
 
-vec2 texCoord = texcoord.st;
 
-vec2 delta = (texCoord - SUNRAYS_TYPE) * GR_DENSITY / float(SUNRAYS_SAMPLES);
 
-float decay = -sunPosition.z / 1000.0;
+
+
 vec3 colorGR = vec3(0.0);
-vec3 sample = vec3(0.0);
+float sample;
 
 for (int i = 0; i < GR_SAMPLES; i++) {
-texCoord -= delta;
 
-//if (texCoord.x < 0.0 || texCoord.x > 1.0) {
-//if (texCoord.y < 0.0 || texCoord.y > 1.0) { break;
-  //              }
-    //      }
+tc -= delta;
+if (getDepth(tc) > threshold) {
 
-if (getDepth(texCoord) > threshold) {
-sample = texture2D(gaux1, texCoord).rgb;
+sample = texture2D(colortex0, tc).x;
+
 }
-sample *= vec3(decay);
+sample *= vec3(decay).x;
 
-if (distance(texCoord, SUNRAYS_TYPE) > 0.05) sample *= 0.2;
+if (distance(tc, SUNRAYS_TYPE) > 0.05) sample *= 0.2;
 colorGR += sample;
   decay *= GR_DECAY;
                   }

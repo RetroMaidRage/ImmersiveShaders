@@ -36,7 +36,7 @@ const int colortex2Format = RGB16;
 
 //------------------------------------------------------------------------------------------
 #define Cloud
-#define CloudDestiny 7.604 //[1 2 3 4 5 6 7 8 9 10]
+#define CloudDestiny 7.604 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
 #define CloudSpeed 0.15 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2 3 4 5 6 7 8 9 10]
 //------------------------------------------------------------------------------------------
 float timefract = worldTime;
@@ -65,7 +65,7 @@ void main() {
 //-----------------------------------------------------------------------------------------
 
     if(texture2D(depthtex0, texcoord).r == 1.0) {
-
+//if(texture2D(depthtex0, texcoord).r == 1.0 && sign(FinalDirection + cameraPosition.y) == sign(eyePlayerPos.y)) {
 
     FinalDirection = worldPos.xyz / worldPos.y;
     FinalDirection.y *= 8000.0;
@@ -99,10 +99,10 @@ vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
       float sunAmount = max(dot(rd, L), 0.0);
 //-----------------------------------INSIDE-------------------------------------------
     vec3 nightFogCol = vec3(0.0,0.0,0.0);
-    vec3 sunsetFogCol = vec3(0.3,0.2,0.2);
+    vec3 sunsetFogCol = vec3(0.3,0.2,0.2)*2;
 //-----------------------------------OUTSIDE-------------------------------------------
     vec3 nightFogColOut = vec3(0.0, 0.0,0.0);
-    vec3 sunsetFogColOut = vec3(0.2, 0.2,0.2);
+    vec3 sunsetFogColOut = vec3(0.2, 0.2,0.2)*2;
 //-------------------------------------------------------------------------------------
     vec3 CloudColorSun = (sunsetFogCol*TimeSunrise + skyColor*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight);
     vec3 CloudColorOutSun = (sunsetFogColOut*TimeSunrise + skyColor*TimeNoon + sunsetFogColOut*TimeSunset + nightFogColOut*TimeMidnight);
