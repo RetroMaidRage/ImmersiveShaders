@@ -58,11 +58,13 @@ const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
 */
+#define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
+#define NoiseTextureResolution 256 //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
 
 const float sunPathRotation = -40.0f;
 const int shadowMapResolution = 2048;
-const int noiseTextureResolution = 256;
-const float shadowDistance = 100.0f;
+const int noiseTextureResolution = 1*NoiseTextureResolution;
+const float shadowDistance = 1.0f*ShadowRenderDistance;
 const float ambientOcclusionLevel = 0.0f;
 
 //--------------------------------------------DEFINE------------------------------------------
@@ -403,11 +405,11 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
   float  water =  texture2D(colortex2, texcoord).r * 255;
 
 
-  	if(int(water) == 1 ) {
-      Diffuse += specular;
-      }else{
-              Diffuse += 0;
-      }
+  //	if(int(water) == 1 ) {
+  //    Diffuse += specular;
+  //    }else{
+    //          Diffuse += 0;
+  //    }
 //Diffuse += volumetric_light(viewPos1, shadowPos);
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0);

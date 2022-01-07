@@ -23,7 +23,7 @@ void main(){
 
 		vec4 color = texture2D(texture, texcoord) * glcolor;
 		color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
-		color *= texture2D(lightmap, lmcoord);
+
 	vec4	 entitycolorfinal = color + NdotL;
 		gl_FragData[0] = color*1.2;
    gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
