@@ -91,7 +91,7 @@ vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 
 
-  vec2 pos = FinalDirection2.zx*3.1;
+  vec2 pos = FinalDirection.zx*3.1;
 
        for(int i = 0; i < 15; i++) {   //CLOUD SAMPLES
 

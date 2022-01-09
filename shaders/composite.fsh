@@ -12,6 +12,7 @@
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
+uniform sampler2D colortex3;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex;
 uniform sampler2D shadowtex0;
@@ -103,6 +104,12 @@ vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetS
     {
         return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
     }
+
+    float lD(in float d, in float zNear, in float zFar) {
+    float zN = 2.0 * d - 1.0;
+
+    return 2.0 * zNear * zFar / (zFar + zNear - zN * (zFar - zNear));
+}
 //--------------------------------------------------------------------------------------------
 
     vec3 localToScreen(vec3 pos) {
@@ -153,6 +160,7 @@ vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetS
 
       return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
     }
+
 //--------------------------------------------------------------------------------------------
 float AdjustLightmapTorch(in float torch) {
 
@@ -404,7 +412,8 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
     vec3 DiffuseAndSpecular = Diffuse + specular;
   float  water =  texture2D(colortex2, texcoord).r * 255;
 
-
+  float dist = lD(Depth, near, far);
+  vec3 transmittance = exp(-vec3(0.1, 0.05, 0.02) * dist);
   //	if(int(water) == 1 ) {
   //    Diffuse += specular;
   //    }else{
@@ -412,6 +421,9 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
   //    }
 //Diffuse += volumetric_light(viewPos1, shadowPos);
     /* DRAWBUFFERS:0 */
+
+
+
     gl_FragData[0] = vec4(OUTPUT, 1.0);
 
 }
