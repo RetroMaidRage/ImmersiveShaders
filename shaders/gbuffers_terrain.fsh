@@ -150,6 +150,36 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
   vec4 SpecularTexture = vec4(1.0, 1.0, 1.0,1.0);
 //---------------------------------------------------CAUSIC-------------------------------------------------
 
+vec2 rainCoord = (vworldpos.xz/10000);
+float Noise = texture2D(noisetex, fract(rainCoord.xy*8)).x;
+Noise += texture2D(noisetex, (rainCoord.xy*4)).x;
+Noise += texture2D(noisetex, (rainCoord.xy*2)).x;
+Noise += texture2D(noisetex, (rainCoord.xy/2)).x;
+
+
+#ifdef MoreLayer
+Noise += texture2D(noisetex, (rainCoord.xy*6)).x;
+Noise += texture2D(noisetex, (rainCoord.xy/4)).x;
+Noise += texture2D(noisetex, (rainCoord.xy*8)).x;
+#endif
+float Fac = max(Noise-2.0,0.0);
+//---------------------------------------------------CAUSIC-------------------------------------------------
+float awan = 0.0;
+float d = 1.400;
+vec4 Clouds = vec4(0.0);
+float speed = frameTimeCounter * 0.2;
+float CloudMove = speed * 0.127 * pow(d, 0.9);
+
+
+  vec2 pos = vworldpos.zx*3.1;
+for(int i = 0; i < 15; i++) {   //CLOUD SAMPLES
+//---------------------------------------------------CAUSIC-------------------------------------------------
+awan += fbm(pos) / d;
+pos *= 2.040;
+d *= 2.064;
+pos -= CloudMove+(speed);
+}
+//---------------------------------------------------CAUSIC-------------------------------------------------
 float distance = length(vpos)-length(vworldpos)/22;
 
 float addend = (sin(10*distance-modifiedTime)+1.0) * waveStrength;
@@ -179,6 +209,8 @@ if (id == 10010.0 || id == 10002.0 || id == 10003.0 || id == 10004.0 || id == 10
 #ifdef FakeCloudShadows
 if (rainStrength == 0) {
 Albedo = puddle_color+colorToAdd;
+vec4 colrain = texture2D(colortex0, texcoord.st);
+  //  Albedo = mix(puddle_color, colrain, pow(abs(awan), (2.604-(1.0 + rainStrength))));
 }
 
 vec4 RainSpecularCol =  texture2D(texture, TexCoords) * Color;
@@ -189,20 +221,7 @@ RainSpecularCol.b = 0.5;
 
 //----------------------------------------TERRAIN, RAIN -----------------------------------------------------------
 //----------------------------------------------NOISE------------------------------------------------------
-vec2 rainCoord = (vworldpos.xz/10000);
-float Noise = texture2D(noisetex, fract(rainCoord.xy*8)).x;
-Noise += texture2D(noisetex, (rainCoord.xy*4)).x;
-Noise += texture2D(noisetex, (rainCoord.xy*2)).x;
-Noise += texture2D(noisetex, (rainCoord.xy/2)).x;
 
-
-#ifdef MoreLayer
-Noise += texture2D(noisetex, (rainCoord.xy*6)).x;
-Noise += texture2D(noisetex, (rainCoord.xy/4)).x;
-Noise += texture2D(noisetex, (rainCoord.xy*8)).x;
-#endif
-
-float Fac = max(Noise-2.0,0.0);
 
 vec4 cmix;
 float OtherFac;
