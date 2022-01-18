@@ -35,18 +35,47 @@ const int colortex2Format = RGB16;
 
 
 //------------------------------------------------------------------------------------------
+#define rnd(r) fract(4579.0 * sin(1957.0 * (r)))
 #define Cloud
 #define CloudDestiny 7.604 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
-#define CloudSpeed 0.03 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+#define CloudDetaly 2.040; //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
+#define CloudPositionY 1.5 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
+#define CloudSpeedNoiseMove 6 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
+#define CloudSpeed 0.015 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define CloudGlobalMove
-#define CloudNoiseType fbm //[noise]
+#define CloudNoiseType noise //[fbm]
+#define Stars
+#define StarsAlways
+#define StarsNum 25	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024 ]
+#define StarsSize 0.025 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
+#define StarsBright 2.0	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 //------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
+//------------------------------------------------------------------------------------------
+float stars(in vec2 x, float numCells, float size, float br)
+{
+    vec2 n = x * numCells;
+    vec2 f = floor(n);
 
+	float d = 1.0e10;
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            vec2 g = f + vec2(float(i), float(j));
+			g = n - g - rand3(mod(g, numCells)) + rand2(g);
+            // Control size
+            g *= 1. / (numCells * size);
+			d = min(d, dot(g, g));
+        }
+    }
+
+    return br * (smoothstep(.95, 1., (1. - sqrt(d))));
+}
 //--------------------------------------------MAIN-----------------------------------------
 void main() {
 //--------------------------------------------POS------------------------------------------
@@ -66,13 +95,17 @@ void main() {
 //------------------------------------------------------------------------------------------
   float awan = 0.0;
   float d = 1.400;
+  float awan2 = 0.0;
+  float d2 = 1.400;
   vec4 Clouds = vec4(0.0);
+  vec4 Clouds2 = vec4(0.0);
   vec3 FinalDirection = vec3(0.0);
   vec3 FinalDirection2 = vec3(0.0);
   float speed = frameTimeCounter * CloudSpeed;
   float speedNoise = frameTimeCounter * 0.003; // Глеб мэски
   float CloudMove = speed * 0.127 * pow(d, 0.9);
   vec4 color = texture2D(gcolor, texcoord);
+  vec4 color2 = texture2D(gcolor, texcoord);
 //-----------------------------------------------------------------------------------------
 
 if(texture2D(depthtex0, texcoord).r == 1.0) {
@@ -91,40 +124,43 @@ vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 
 
-  vec2 pos = FinalDirection.zx*3.1;
+  vec2 pos = FinalDirection.zx*CloudPositionY;
 
        for(int i = 0; i < 15; i++) {   //CLOUD SAMPLES
 
        awan += CloudNoiseType(pos) / d;
-       pos *= 2.040;
+       pos *= CloudDetaly;
        d *= 2.064;
-       pos -= CloudMove*(speedNoise)*2;
+       pos -= CloudMove*(speedNoise)*CloudSpeedNoiseMove;
 }
+
 //-----------------------------------CLOUD_NOISE-------------------------------------------
-vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
-float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
 float sunAmount = max(dot(rd, L), 0.0);
 //-----------------------------------INSIDE------------------------------------------------
     vec3 nightFogCol = vec3(0.0,0.0,0.0);
     vec3 sunsetFogCol = vec3(0.3,0.2,0.2)*2;
 //-----------------------------------OUTSIDE-----------------------------------------------
     vec3 nightFogColOut = vec3(0.0, 0.0,0.0);
-    vec3 sunsetFogColOut = vec3(0.2, 0.2,0.2)*2;
+    vec3 sunsetFogColOut = vec3(0.2, 0.2,0.2)/1.2;
 //-----------------------------------------------------------------------------------------
     vec3 CloudColorSun = (sunsetFogCol*TimeSunrise + skyColor*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight);
     vec3 CloudColorOutSun = (sunsetFogColOut*TimeSunrise + skyColor*TimeNoon + sunsetFogColOut*TimeSunset + nightFogColOut*TimeMidnight);
 //-----------------------------------------------------------------------------------------
     vec4 fogColor = mix( vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0) );
 //-----------------------------------------------------------------------------------------
-		color.r = (color.r*2);
-    color.g = (color.g*3);
-    color.b = (color.b*5);
-    color = color / (color + 40.2) * (1.0+2.0);
+		color.r = (color.r*2) ;color.g = (color.g*3); color.b = (color.b*5); color = color / (color + 40.2) * (1.0+2.0);
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
-color = color + Clouds;
+color = color +Clouds;
+#endif
+
+#ifdef Stars
+color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
+#ifdef StarsAlways
+color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright);
+#endif
 #endif
 //----------------------------------------------------------------------------------------
 }

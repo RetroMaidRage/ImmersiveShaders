@@ -65,8 +65,8 @@ const int colortex2Format = RGB16;
 #define SR_Color_Type SunRaysFogColor //[SunRaysCustomColor SunRaysFogColor SunRaysSkyColor]
 #define BLOOM
 #define BLOOM_AMOUNT 0.00010 ///[0.00018 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001]
-#define BLOOM_QUALITY 5 //[1 2 3 4 5 6 7 8 9 10 11 12]
-#define BLOOM_QUALITY2 -2 //[-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12]
+#define BLOOM_QUALITY 10 //[1 2 3 4 5 6 7 8 9 10 11 12]
+#define BLOOM_QUALITY2 -5 //[-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12]
 #define BLOOM_BLUR FastBlur //[FastBlur QuallityBlur]
 
 #define COLORCORRECT_RED 1.6 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]

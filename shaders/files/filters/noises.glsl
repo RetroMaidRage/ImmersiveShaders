@@ -162,3 +162,14 @@ vec2 randomVec2 (float inVal)
 {
 		return normalize(vec2(randomVal(inVal), randomVal(inVal+151.523)));
 }
+
+vec2 rand2(vec2 p)
+{
+    p = vec2(dot(p, vec2(12.9898,78.233)), dot(p, vec2(26.65125, 83.054543)));
+    return fract(sin(p) * 43758.5453);
+}
+
+float rand3(vec2 p)
+{
+    return fract(sin(dot(p.xy ,vec2(54.90898,18.233))) * 4337.5453);
+}
