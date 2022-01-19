@@ -205,6 +205,7 @@ vec4 Albedo = texture2D(texture, TexCoords) * Color;
 //----------------------------------------FakeCloudShadows------------------------------------------------
 
 if (id == 10010.0 || id == 10002.0 || id == 10003.0 || id == 10004.0 || id == 10007.0 || id == 10008.0 || id == 10015.0) { //if id = block
+vec4 GradientColor = texture2D(colortex0, texcoord.st);
 
 #ifdef FakeCloudShadows
 if (rainStrength == 0) {
@@ -228,27 +229,31 @@ float OtherFac;
 //----------------------------------------PUDDLE---------------------------------------------------------
 #ifdef Rain_Puddle
 
- OtherFac = (1.0 - (pow(PuddleStrenght,Fac))) * (1.0 + rainStrength);
+ OtherFac = (1.0 - (pow(PuddleStrenght,Fac))) * (1.0 + rainStrength)*1.5;
 
-vec4 PuddleColor = texture2D(colortex0, texcoord.st)/22+((xDelta * yDelta*Albedo))+(SpecularAngle*Albedo)*15;
+vec4 PuddleColor = texture2D(noisetex, texcoord.st);//+(SpecularAngle*Albedo)*15;
+PuddleColor += texture2D(noisetex, texcoord.st*2);
+PuddleColor += texture2D(noisetex, texcoord.st*6);
+PuddleColor += texture2D(noisetex, texcoord.st/2);
+PuddleColor *= texture2D(colortex0, texcoord.st);
+PuddleColor.r = 1; PuddleColor.g = 1; PuddleColor.b = 1;
 
-PuddleColor.r +=0.5;
-PuddleColor.g +=0.5;
-PuddleColor.b +=0.5;
+
+ //cmix = mix(Albedo,PuddleColor, OtherFac);
+//cmix +=(xDelta * yDelta*Albedo)*0.02;
 
 
- cmix = mix(Albedo,PuddleColor, OtherFac);
-cmix +=SpecularAngle*(xDelta * yDelta*Albedo)*2;
-
- if (rainStrength == 1) {
-Albedo = cmix;
-}
+//Albedo = cmix;
+if (id == 10010.0 ){
+     if (rainStrength == 1) {
+Albedo = mix(Albedo,PuddleColor+(xDelta * yDelta*Albedo)*0.2, OtherFac) ;;
+}}
 #endif
 //-------------------------------------------TerrainGradient---------------------------------------------
 #ifdef TerrainGradient
  OtherFac = (1.0 - (pow(GradientTerrainStrenght,Fac))) / (1.0 + rainStrength);
 
-vec4 GradientColor = texture2D(colortex0, texcoord.st);
+
 
 #ifdef UseGradientColor
 GradientColor.r = GradientColorRed; GradientColor.g = GradientColorGreen; GradientColor.b = GradientColorBlue;
@@ -266,7 +271,7 @@ if (id == 10015.0 ){
 
 
   GradientColor.r+=1.8;
-    GradientColor.g+=0.2;
+    GradientColor.g+=1.25;
      OtherFac = (1.0 - (pow(GradientLeavesStrenght,Fac))) * (1.0 + rainStrength);
      OtherFac+=0.07;
   cmix = mix(Albedo,GradientColor, OtherFac);
@@ -310,7 +315,7 @@ Albedo = puddle_color+(colorToAddWater*2)+(result/2);
 
 }
 #endif
-
+vec4 GradientColorR = texture2D(colortex0, texcoord.st);
 
 //--------------------------------------------------------------------------------------------------------
 

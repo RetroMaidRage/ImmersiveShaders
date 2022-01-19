@@ -37,16 +37,17 @@ const int colortex2Format = RGB16;
 //------------------------------------------------------------------------------------------
 #define rnd(r) fract(4579.0 * sin(1957.0 * (r)))
 #define Cloud
+#define CloudQuality 15  //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64]
 #define CloudDestiny 7.604 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024]
 #define CloudDetaly 2.040; //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
 #define CloudPositionY 1.5 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
 #define CloudSpeedNoiseMove 6 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
 #define CloudSpeed 0.015 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define CloudGlobalMove
-#define CloudNoiseType noise //[fbm]
+#define CloudNoiseType noise //[fbm SimplexPerlin2D simplex2D]
 #define Stars
 #define StarsAlways
-#define StarsNum 25	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024 ]
+#define StarsNum 15	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024 ]
 #define StarsSize 0.025 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define StarsBright 2.0	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 //------------------------------------------------------------------------------------------
@@ -122,11 +123,9 @@ FinalDirection -=  CloudMove;
 //-----------------------------------CLOUD_NOISE-------------------------------------------
 vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
-
-
   vec2 pos = FinalDirection.zx*CloudPositionY;
 
-       for(int i = 0; i < 15; i++) {   //CLOUD SAMPLES
+       for(int i = 0; i < CloudQuality; i++) {   //CLOUD SAMPLES
 
        awan += CloudNoiseType(pos) / d;
        pos *= CloudDetaly;
@@ -135,7 +134,7 @@ vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 }
 
 //-----------------------------------CLOUD_NOISE-------------------------------------------
-float sunAmount = max(dot(rd, L), 0.0);
+    float sunAmount = max(dot(rd, L), 0.0);
 //-----------------------------------INSIDE------------------------------------------------
     vec3 nightFogCol = vec3(0.0,0.0,0.0);
     vec3 sunsetFogCol = vec3(0.3,0.2,0.2)*2;
@@ -146,20 +145,21 @@ float sunAmount = max(dot(rd, L), 0.0);
     vec3 CloudColorSun = (sunsetFogCol*TimeSunrise + skyColor*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight);
     vec3 CloudColorOutSun = (sunsetFogColOut*TimeSunrise + skyColor*TimeNoon + sunsetFogColOut*TimeSunset + nightFogColOut*TimeMidnight);
 //-----------------------------------------------------------------------------------------
-    vec4 fogColor = mix( vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0) );
+    vec4 fogColor = mix(vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0));
 //-----------------------------------------------------------------------------------------
-		color.r = (color.r*2) ;color.g = (color.g*3); color.b = (color.b*5); color = color / (color + 40.2) * (1.0+2.0);
+		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
+    color = color / (color + 40.2) * (1.0+2.0);
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
-color = color +Clouds;
+color = color + Clouds;
 #endif
 
 #ifdef Stars
-color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
+color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, FinalDirection2.xz/222)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
 #ifdef StarsAlways
-color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright);
+color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, FinalDirection2.xz/222);
 #endif
 #endif
 //----------------------------------------------------------------------------------------

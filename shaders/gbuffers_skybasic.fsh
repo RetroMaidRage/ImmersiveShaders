@@ -23,6 +23,7 @@ uniform mat4 gbufferModelViewInverse;
 #define skyColorFinal = skyColor;
 #define NewSky
 #define UseMieScattering
+#define UseRayleighScattering
 #define MieScatteringType customFogColor //[customSkyColor]
 #define MieScatteringIntense 1.5 ///[ 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.010  0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 //#define AtmosphereSky
@@ -97,7 +98,9 @@ vec3 o = vec3(1.0);
 vec3 mieScatter = mie(sunDistance, vec3(MieScatteringIntense));
 float p = Rayleigh(sunDistance);
 MieScatteringType+=mieScatter;
-//customSkyColor += p;
+#ifdef UseRayleighScattering
+MieScatteringType += p;
+#endif
 #endif
 
 vec3 colorSky = atmosphere(
