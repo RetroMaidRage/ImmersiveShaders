@@ -3,6 +3,7 @@
 uniform sampler2D depthtex0;
 uniform sampler2D colortex0;
 uniform vec3 skyColor;
+uniform vec2 TexCoords;
 uniform float far;
 uniform float near;
 uniform float frameTimeCounter;
@@ -37,18 +38,21 @@ float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - 
 void main() {
 
     vec3 color = texture2D(colortex0, texcoord.st).rgb;
+    vec3 color2 = texture2D(colortex0, texcoord.st).rgb;
 
-    float depth = texture2D(depthtex0, texcoord.st).r;
 
     vec3 nightFogCol = vec3(0.2, 0.3, 0.5)*fogDensityNight;
     vec3 sunsetFogCol = vec3(0.8, 0.66, 0.5)*fogDensitySunset;
 
     vec3 customFogColor = (sunsetFogCol*TimeSunrise + skyColor*TimeNoon + sunsetFogCol*TimeSunset + nightFogCol*TimeMidnight);
+    float depth = texture2D(depthtex0, texcoord.st).r;
+  	bool isTerrain = depth < 1.0;
+
 
 
 //-------------------------------------------------------------------------------------------
-color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * (rainStrength*2) / far, 1.0));
-color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
+if (isTerrain) color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * (rainStrength*1) / far, 1.0));
+if (isTerrain) color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
 //-------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(color, 1.0);

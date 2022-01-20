@@ -69,7 +69,7 @@ float stars(in vec2 x, float numCells, float size, float br)
         {
             vec2 g = f + vec2(float(i), float(j));
 			g = n - g - rand3(mod(g, numCells)) + rand2(g);
-            // Control size
+
             g *= 1. / (numCells * size);
 			d = min(d, dot(g, g));
         }
@@ -123,10 +123,10 @@ FinalDirection -=  CloudMove;
 //-----------------------------------CLOUD_NOISE-------------------------------------------
 vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
-  vec2 pos = FinalDirection.zx*CloudPositionY;
+vec2 pos = FinalDirection.zx*CloudPositionY;
 
-       for(int i = 0; i < CloudQuality; i++) {   //CLOUD SAMPLES
-
+       for(int i = 0; i < CloudQuality; i++)
+{
        awan += CloudNoiseType(pos) / d;
        pos *= CloudDetaly;
        d *= 2.064;
@@ -148,12 +148,15 @@ vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
     vec4 fogColor = mix(vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0));
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
-    color = color / (color + 40.2) * (1.0+2.0);
+    color = color / (color + 70.2) * (1.0+2.0);
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
 color = color + Clouds;
+     if (rainStrength == 1) {
+       color.b += 0.7;        color.r += 0.7;        color.g += 0.7;
+     }
 #endif
 
 #ifdef Stars

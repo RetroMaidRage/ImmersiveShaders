@@ -107,6 +107,10 @@ const int colortex2Format = RGB16;
 
 //#define FXAA
 
+//#define Sharpening
+#define Offset_Strength 0.8 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+#define Sharpening_Amount 0.2 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+
 //#define WarmEffect
 
 #define UnderWater
@@ -328,8 +332,29 @@ vec2 LightPos = tpos.xy/tpos.z;
 
 //---------------------------------------------FUNCTIONS------------------------------------------------
 #ifdef FXAA
-  color = ApplyFXAA(colortex0,texSize, uv);
-  #endif
+color = ApplyFXAA(colortex0,texSize, uv);
+#endif
+
+#ifdef Sharpening
+
+vec3 blur = color.rgb;
+blur += texture(colortex0, uv + vec2(0.0, 0.001 * Offset_Strength)).rgb;
+blur += texture(colortex0, uv + vec2(0.001 * Offset_Strength, 0.0)).rgb;
+blur += texture(colortex0, uv - vec2(0.0, 0.001 * Offset_Strength)).rgb;
+blur += texture(colortex0, uv - vec2(0.001 * Offset_Strength, 0.0)).rgb;
+
+blur += texture(colortex0, uv + vec2(0.001 * Offset_Strength)).rgb / 2.0;
+blur += texture(colortex0, uv - vec2(0.001 * Offset_Strength)).rgb / 2.0;
+blur += texture(colortex0, uv + vec2(0.001 * Offset_Strength, -0.001 * Offset_Strength)).rgb / 2.0;
+blur += texture(colortex0, uv + vec2(-0.001 * Offset_Strength, 0.001 * Offset_Strength)).rgb / 2.0;
+
+    blur /= 7.0;
+
+    float sharpness = (color.rgb - blur).r * Sharpening_Amount;
+
+ color.rgb += sharpness;
+
+ #endif
 //------------------------------------------------------------------------------------------------------
 #ifdef Chromation_Abberation
 color.r = texture(colortex0, uv - ChromaOffset).r;
@@ -543,7 +568,9 @@ color += texture2D(colortex0, uv);
       }
       sum = sum / vec4(gaux5);
 
+     if (rainStrength == 0) {
   		color += sum*sum*BLOOM_AMOUNT;
+    }
   #endif
 //------------------------------------------------------------------------------------------------------------------
 #ifdef CROSSPROCESS
