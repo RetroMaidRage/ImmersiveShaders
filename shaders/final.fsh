@@ -316,7 +316,6 @@ vec2 SunPosNormalVec2 = normalize(sunPosition.xy);
 
         vec2 GetSreenRes = vec2(viewWidth, viewHeight);
 
-
 vec4 tpos = vec4(sunPosition,1.0)*gbufferProjection;
 tpos = vec4(tpos.xyz/tpos.w,1.0);
 vec2 LightPos = tpos.xy/tpos.z;
@@ -348,11 +347,11 @@ blur += texture(colortex0, uv - vec2(0.001 * Offset_Strength)).rgb / 2.0;
 blur += texture(colortex0, uv + vec2(0.001 * Offset_Strength, -0.001 * Offset_Strength)).rgb / 2.0;
 blur += texture(colortex0, uv + vec2(-0.001 * Offset_Strength, 0.001 * Offset_Strength)).rgb / 2.0;
 
-    blur /= 7.0;
+blur /= 7.0;
 
-    float sharpness = (color.rgb - blur).r * Sharpening_Amount;
+float sharpness = (color.rgb - blur).r * Sharpening_Amount;
 
- color.rgb += sharpness;
+color.rgb += sharpness;
 
  #endif
 //------------------------------------------------------------------------------------------------------

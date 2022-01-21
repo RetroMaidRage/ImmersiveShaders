@@ -331,6 +331,10 @@ float volumetric_light(vec3 viewPos1, vec4 shadowPos)
     return accum_density*0.03;
 }
 #endif
+vec3 fresnel(vec3 raydir, vec3 normal){
+    vec3 F0 = vec3(1.0);
+    return F0+(1.0-F0)*pow(1.0-dot(-raydir, normal), 5.0);
+}
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
@@ -421,8 +425,14 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
   //    }
 //Diffuse += volumetric_light(viewPos1, shadowPos);
     /* DRAWBUFFERS:0 */
+    vec3 screenPoss = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
+    vec3 clipPoss = screenPoss * 2.0 - 1.0;
+    vec4 tmps = gbufferProjectionInverse * vec4(clipPoss, 1.0);
+    vec3 viewPoss = tmps.xyz / tmps.w;
+    vec4 world_position = gbufferModelViewInverse * vec4(viewPoss, 1.0);
+vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 
-
+Diffuse *= fresnel(rd, Normal);
 
     gl_FragData[0] = vec4(OUTPUT, 1.0);
 

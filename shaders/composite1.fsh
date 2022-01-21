@@ -52,7 +52,7 @@ void main() {
 
 //-------------------------------------------------------------------------------------------
 if (isTerrain) color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * (rainStrength*1) / far, 1.0));
-if (isTerrain) color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
+//if (isTerrain) color = mix(color, customFogColor, min(GetDepthLinear(texcoord.st) * TimeMidnight / far, 1.0));
 //-------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(color, 1.0);
