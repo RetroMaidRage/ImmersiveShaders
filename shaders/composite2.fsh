@@ -152,9 +152,11 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
     vec4 fogColor = mix(vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0));
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
-    color = color / (color + 70.2) * (1.0+2.0);
+    color = color / (color + 65.2) * (1.0+2.0);
+
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
 color = color + Clouds;

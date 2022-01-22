@@ -94,14 +94,19 @@ vec3 o = vec3(1.0);
 	float sunDistance = distance(viewVec, clamp(SunVector, -1.0, 1.0));
 	 sunDistance = distance(viewVec, clamp(SunVector, -1.0, 1.0));
 //-------------------------OUT----------------------------------
+    float cosTheta = dot(viewVec, normalize(sunPosition));
+
 #ifdef UseMieScattering
 vec3 mieScatter = mie(sunDistance, vec3(MieScatteringIntense));
-float p = Rayleigh(sunDistance);
 MieScatteringType+=mieScatter;
+#endif
+
 #ifdef UseRayleighScattering
+float p = Rayleigh(cosTheta);
 MieScatteringType += p;
 #endif
-#endif
+
+MieScatteringType += phaseHG(0.8, cosTheta);
 
 vec3 colorSky = atmosphere(
 			V,           // normalized ray direction

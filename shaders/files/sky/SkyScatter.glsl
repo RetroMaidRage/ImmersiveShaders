@@ -25,3 +25,8 @@ return max(exp(-pow(dist, 0.55)) * sunL - 0.2, 0.0);
 float Rayleigh(float costh){
 return 3.0 / (16.0 * 3.14 ) * (1.0 + costh * costh);
 }
+
+float phaseHG(float g, float cst) {
+    float gg = g*g;
+    return (1.0 - gg) / (4.0*3.14*pow(1.0+gg-2.0*g*cst, 1.5));
+}
