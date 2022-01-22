@@ -125,41 +125,41 @@ vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetS
       return result.xyz;
     }
 //--------------------------------------------------------------------------------------------
-    vec3 raytraceScreen(vec3 screenPosition, vec3 localNormal) {
-    //  https://github.com/williambulin/SSR-Minecraft
-      vec3 startPosition  = screenToLocal(screenPosition);
-      vec3 startDirection = normalize(reflect(normalize(startPosition), localNormal));
-      vec3 endPosition    = startPosition + (startDirection * 200.0);
-      vec3 result         = vec3(0.0);
+  //  vec3 raytraceScreen(vec3 screenPosition, vec3 localNormal) {
+  //  //  https://github.com/williambulin/SSR-Minecraft
+  //    vec3 startPosition  = screenToLocal(screenPosition);
+  //    vec3 startDirection = normalize(reflect(normalize(startPosition), localNormal));
+  //    vec3 endPosition    = startPosition + (startDirection * 200.0);
+  //    vec3 result         = vec3(0.0);
 
-      float minStep  = 0.01;  // clamp(0.00001, 0.001, distance(vec3(0.0), startPosition) / 100000.0)
-      float stepSize = 0.001;
-      for (float currentStep = 0.01; currentStep <= 1.0; currentStep += stepSize) {
-        vec3 currentPosition = mix(startPosition, endPosition, pow(currentStep, 1.0));
-        vec3 screenQuery     = localToScreen(currentPosition);
-        vec3 localQuery      = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
-        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
-          break;
+  //    float minStep  = 0.01;  // clamp(0.00001, 0.001, distance(vec3(0.0), startPosition) / 100000.0)
+  //    float stepSize = 0.001;
+//      for (float currentStep = 0.01; currentStep <= 1.0; currentStep += stepSize) {
+//        vec3 currentPosition = mix(startPosition, endPosition, pow(currentStep, 1.0));
+//        vec3 screenQuery     = localToScreen(currentPosition);
+//        vec3 localQuery      = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
+//        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
+//          break;
 
-        if ((currentPosition.z - localQuery.z) <= 0.0) {
-          result = currentPosition;
-          break;
-        }
-      }
-
-      vec3 refinementDirection = startDirection / 1.0;
-      for (int refinementStep = 0; refinementStep < 100; ++refinementStep) {
-        vec3 screenQuery = localToScreen(result);
-        vec3 localQuery  = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
-        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
-          break;
-
-        result += refinementDirection * (((result.z - localQuery.z) <= 0.0) ? -1.0 : 1.0);
-        refinementDirection /= 2.0;
-      }
-
-      return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
-    }
+//        if ((currentPosition.z - localQuery.z) <= 0.0) {
+//          result = currentPosition;
+  //        break;
+  //      }
+//      }
+//
+    //  vec3 refinementDirection = startDirection / 1.0;
+  //    for (int refinementStep = 0; refinementStep < 100; ++refinementStep) {
+    //    vec3 screenQuery = localToScreen(result);
+    //    vec3 localQuery  = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
+    //    if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
+    //      break;
+//
+    //    result += refinementDirection * (((result.z - localQuery.z) <= 0.0) ? -1.0 : 1.0);
+  //      refinementDirection /= 2.0;
+  //    }
+//
+  //    return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
+//    }
 
 //--------------------------------------------------------------------------------------------
 float AdjustLightmapTorch(in float torch) {
@@ -335,6 +335,8 @@ vec3 fresnel(vec3 raydir, vec3 normal){
     vec3 F0 = vec3(1.0);
     return F0+(1.0-F0)*pow(1.0-dot(-raydir, normal), 5.0);
 }
+
+
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
@@ -401,15 +403,15 @@ vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
 vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
 vec3 viewPos1 = tmp1.xyz / tmp1.w;
 
-  vec3  colorrt      = texture2D(gcolor, textureCoordinates).rgb;
-  vec3  worldNormal = texture2D(gnormal, textureCoordinates).xyz * 2.0 - 1.0;
-    float depth_rt     = texture2D(depthtex0, textureCoordinates).g;
+vec3  color6      = texture2D(gcolor, texcoord).rgb;
+vec3  worldNormal1 = texture2D(gnormal, texcoord).xyz * 2.0 - 1.0;
+float depth1       = texture2D(depthtex0, texcoord).g;
 
-  //if (distance(vec3(-1.0), worldNormal) > 0.0) {
-  //  vec3 rt = raytraceScreen(vec3(textureCoordinates, depth_rt), normalize(mat3(gbufferModelViewInverse) * worldNormal));
+  if (distance(vec3(-1.0), Normal) > 0.0) {
+  //  vec3 rt = raytraceScreen(vec3(TexCoords, depth1), normalize(mat3(gbufferModelViewInverse) * Normal));
 
-  //  colorrt   = mix(colorrt, texture2D(gcolor, rt.xy).rgb, rt.z * 0.75);
-//}
+//    color6   = mix(color6, texture2D(gcolor, rt.xy).rgb, rt.z * 0.75);
+}
 
 
   vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
@@ -430,10 +432,12 @@ vec3 viewPos1 = tmp1.xyz / tmp1.w;
     vec4 tmps = gbufferProjectionInverse * vec4(clipPoss, 1.0);
     vec3 viewPoss = tmps.xyz / tmps.w;
     vec4 world_position = gbufferModelViewInverse * vec4(viewPoss, 1.0);
+
+
 vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 
 Diffuse *= fresnel(rd, Normal);
-
+//Diffuse *= color6;
     gl_FragData[0] = vec4(OUTPUT, 1.0);
 
 }

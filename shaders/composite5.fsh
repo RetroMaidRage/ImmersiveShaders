@@ -100,5 +100,5 @@ float puddle =  CalcPuddles(worldPos);
   vec4  Clouds = mix(color, puddle_color, puddle);
 
 /* DRAWBUFFERS:0 */
-	gl_FragData[0] = color; //gcolor
+//	gl_FragData[0] = color; //gcolor
 }
