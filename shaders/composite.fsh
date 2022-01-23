@@ -13,6 +13,8 @@ uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
+uniform sampler2D colortex4;
+uniform sampler2D colortex5;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex;
 uniform sampler2D shadowtex0;
@@ -86,6 +88,10 @@ const float ambientOcclusionLevel = 0.0f;
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
+#define SSR2
+#define SSR3
+#define SSR2_Steps 32  //[ 2  4  6  8  10  12  16  18  20  22  24  26  28  30  32 48 64 128 256]
+#define SSR_NORMALS NormalWater //[Normal]
 //--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -93,73 +99,39 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 //--------------------------------------------------------------------------------------------
-
-
 vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
 vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
 vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 //--------------------------------------------------------------------------------------------
+const float stp = 1.2;			//size of one step for raytracing algorithm
+const float ref = 0.1;			//refinement multiplier
+const float inc = 2.2;			//increasement factor at each step
+const int maxf = 4;				//number of refinements
+
+//--------------------------------------------------------------------------------------------
+vec3 nvec3(vec4 pos){
+    return pos.xyz/pos.w;
+}
+//--------------------------------------------------------------------------------------------
+vec4 nvec4(vec3 pos){
+    return vec4(pos.xyz, 1.0);
+}
+//--------------------------------------------------------------------------------------------
+float cdist(vec2 coord) {
+	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
+}
+//--------------------------------------------------------------------------------------------
     float get_linear_depth(in float depth)
     {
         return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
     }
-
+//--------------------------------------------------------------------------------------------
     float lD(in float d, in float zNear, in float zFar) {
     float zN = 2.0 * d - 1.0;
 
     return 2.0 * zNear * zFar / (zFar + zNear - zN * (zFar - zNear));
 }
-//--------------------------------------------------------------------------------------------
-
-    vec3 localToScreen(vec3 pos) {
-      vec3 data = mat3(gbufferProjection) * pos;
-      data += gbufferProjection[3].xyz;
-      return ((data.xyz / -pos.z) / 2.0 + 0.5).xyz;
-    }
-//--------------------------------------------------------------------------------------------
-    vec3 screenToLocal(vec3 posDepth) {
-      vec4 result = vec4(posDepth, 1.0) * 2.0 - 1.0;
-      result      = (gbufferProjectionInverse * result);
-      result /= result.w;
-      return result.xyz;
-    }
-//--------------------------------------------------------------------------------------------
-  //  vec3 raytraceScreen(vec3 screenPosition, vec3 localNormal) {
-  //  //  https://github.com/williambulin/SSR-Minecraft
-  //    vec3 startPosition  = screenToLocal(screenPosition);
-  //    vec3 startDirection = normalize(reflect(normalize(startPosition), localNormal));
-  //    vec3 endPosition    = startPosition + (startDirection * 200.0);
-  //    vec3 result         = vec3(0.0);
-
-  //    float minStep  = 0.01;  // clamp(0.00001, 0.001, distance(vec3(0.0), startPosition) / 100000.0)
-  //    float stepSize = 0.001;
-//      for (float currentStep = 0.01; currentStep <= 1.0; currentStep += stepSize) {
-//        vec3 currentPosition = mix(startPosition, endPosition, pow(currentStep, 1.0));
-//        vec3 screenQuery     = localToScreen(currentPosition);
-//        vec3 localQuery      = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
-//        if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
-//          break;
-
-//        if ((currentPosition.z - localQuery.z) <= 0.0) {
-//          result = currentPosition;
-  //        break;
-  //      }
-//      }
-//
-    //  vec3 refinementDirection = startDirection / 1.0;
-  //    for (int refinementStep = 0; refinementStep < 100; ++refinementStep) {
-    //    vec3 screenQuery = localToScreen(result);
-    //    vec3 localQuery  = screenToLocal(vec3(screenQuery.xy, texture2D(depthtex0, screenQuery.xy)));
-    //    if (screenQuery.x < 0.0 || screenQuery.y < 0.0 || screenQuery.x > 1.0 || screenQuery.y > 1.0)
-    //      break;
-//
-    //    result += refinementDirection * (((result.z - localQuery.z) <= 0.0) ? -1.0 : 1.0);
-  //      refinementDirection /= 2.0;
-  //    }
-//
-  //    return vec3(localToScreen(result).xy, (length(result) > 0.0) ? 1.0 : 0.0);
-//    }
 
 //--------------------------------------------------------------------------------------------
 float AdjustLightmapTorch(in float torch) {
@@ -199,19 +171,7 @@ float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords) {
     return step(SampleCoords.z - 0.001f, texture2D(ShadowMap, SampleCoords.xy).r);
 }
 //--------------------------------------------------------------------------------------------
-vec3 calculate_shadow_coord(vec4 world_position)
-{
-    vec4 shadow_projection = shadowProjection * shadowModelView * world_position;  //Convert world position into position in shadow projection space
-    shadow_projection.xyz = distort(shadow_projection.xyz); //Apply distortion
 
-    vec3 shadow_coords = shadow_projection.xyz * 0.5 + 0.5; //Convert it into screen space
-    return shadow_coords;
-}
-//--------------------------------------------------------------------------------------------
-float calculate_shadow(vec3 shadow_coords)
-{
-   return step(shadow_coords.z -  0.001f, texture2D(shadowtex0, shadow_coords.xy).x);
-}
 //--------------------------------------------------------------------------------------------
 vec3 TransparentShadow(in vec3 SampleCoords){
 
@@ -271,76 +231,84 @@ vec3 GetShadow(float depth) {
     return ShadowAccum;
 }
 //--------------------------------------------------------------------------------------------
-
-
-float calculate_shadow(sampler2D shadowtex0, vec3 viewPos) {
-  vec4 shadowPos = gbufferModelViewInverse * vec4(viewPos, 1.0); // Convert the view space position to a player space position
-       shadowPos = shadowModelView  * shadowPos; // Multiply by the shadow view matrix
-     shadowPos = shadowProjection * shadowPos; // Multiply by the shadow projection matrix
-   float sampleShadow = texture2D(shadowtex0, shadowPos.xy).r;
-   return sampleShadow;
-}
-//--------------------------------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////////////////////
-
 #ifdef vl
-float volumetric_light(vec3 viewPos1, vec4 shadowPos)
-{
-    //Settings
-    int SAMPLES = 2; //That's our "quality" setting
 
-    //Start and end position
-    //As we are going to sample shadowmap, and raymarch from sun to player pos, we want to convert our ray start and end positions to shadow
-    //projection space.
-    //We will use matrices for that. [World -> Shadow View -> Shadow Projection]
-    vec4 start_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 end_position = shadowProjection * shadowModelView * gbufferModelViewInverse * vec4(viewPos1, 1.0);
-
-    //Ray length - Length of the ray. As my english is veeery poor, i'm leaving this to more experienced devs.
-    //To me - it has to be like that to work properly lmao. With 1.0 / float(SAMPLES) I had issues
-    float ray_length = length(end_position.xyz - start_position.xyz) / float(SAMPLES);
-
-    //Ray increment - aka our 'ray step'. Each iteration in our loop means moving towards ray direction (well, end position)
-    vec3 ray_increment = normalize(end_position.xyz - start_position.xyz) * ray_length;
-
-    //Ray position (We start at 0.0,0.0,0.0)
-    //Try to include dither - this will help with banding artifacts at low sample count :slight_smile:
-    //It's simple, you will figure out how to do that
-    vec3 ray_position = start_position.xyz;
-
-    //Accumulated density - We should zero-initialize it
-    float accum_density = 0.0;
-
-    //Main loop - AKA our ray marches in B [end position] direction, and collects density [shadow map] samples
-    for(int i = 0; i < SAMPLES; ++i)
-    {
-        //Distort ray position and convert it into screen space
-        vec3 shadow_position = distort(ray_position.xyz) * 0.5 + 0.5;
-
-        //Sample shadow map [You have this function somewhere, take a look at it. It's not colored shadows!!!]
-        accum_density += calculate_shadow(shadowtex0, shadow_position);
-
-        //Raymarch, take a step in B [end position] direction
-        ray_position += ray_increment;
-    }
-    //Divide by sample count
-    accum_density /= float(SAMPLES);
-
-    //Output :slight_smile:
-    return accum_density*0.03;
-}
 #endif
+//--------------------------------------------------------------------------------------------
 vec3 fresnel(vec3 raydir, vec3 normal){
     vec3 F0 = vec3(1.0);
     return F0+(1.0-F0)*pow(1.0-dot(-raydir, normal), 5.0);
 }
+//--------------------------------------------------------------------------------------------
+#ifdef SSR2
+vec3 ComputeSSR(vec3 viewDir, vec3 ViewSpace, vec3 ClipSpace, vec3 Normal){
 
 
+
+    vec3 RayDirection = reflect(viewDir, Normal);
+    vec3 ViewSpaceWithRayDirection = ViewSpace + RayDirection;
+
+    vec4 ScreenSpaceRayDirectionW = gbufferProjection *  vec4(ViewSpaceWithRayDirection, 1.0f);
+    vec3 ScreenSpaceRayDirection = normalize(ScreenSpaceRayDirectionW.xyz / ScreenSpaceRayDirectionW.w - ClipSpace) * 0.01f;
+
+    vec3 RayMarchPosition = ClipSpace;
+
+    for(int i = 0; i < SSR2_Steps; i++){
+
+        RayMarchPosition += ScreenSpaceRayDirection;
+        vec3 ScreenSpace = RayMarchPosition * 0.5f + 0.5f;
+
+        if(any(lessThan(ScreenSpace.xy, vec2(0.0f))) || any(greaterThan(ScreenSpace.xy, vec2(1.0f)))){
+            return vec3(0.0f);
+        } else if(texture2D(depthtex0, ScreenSpace.xy).x < ScreenSpace.z){
+            return texture2D(colortex0,ScreenSpace.xy).rgb;
+        }
+
+    }
+    return texture2D(colortex0, RayMarchPosition.xy * 0.5f + 0.5f).rgb;
+}
+#endif
+//--------------------------------------------------------------------------------------------
+#ifdef SSR3
+vec4 raytrace(vec3 viewdir, vec3 normal){
+  //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
+    vec4 color = vec4(0.0);
+    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
+    vec3 vector = stp * rvector;
+    vec3 oldpos = viewdir;
+    viewdir += vector;
+    int sr = 0;
+    for(int i = 0; i < 40; i++){
+        vec3 pos = nvec3(gbufferProjection * nvec4(viewdir)) * 0.5 + 0.5;
+  //      if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0) break;
+        vec3 spos = vec3(pos.st, texture2D(depthtex0, pos.st).r);
+        spos = nvec3(gbufferProjectionInverse * nvec4(spos * 2.0 - 1.0));
+		float err = abs(viewdir.z-spos.z);
+		if(err < pow(length(vector)*1.85,1.15) && texture2D(gaux1,pos.st).g < 0.01){
+                sr++;
+                if(sr >= maxf){
+                    float border = clamp(1.0 - pow(cdist(pos.st), 1.0), 0.0, 1.0);
+                    color = texture2D(gcolor, pos.st);
+					float land = texture2D(gaux1, pos.st).g;
+					land = float(land < 0.03);
+					spos.z = mix(viewdir.z,2000.0*(0.4+1.0*0.6),land);
+					color.a = 1.0;
+                    color.a *= border;
+                    break;
+                }
+                viewdir = oldpos;
+                vector *=ref;
+        }
+        vector *= inc;
+        oldpos = viewdir;
+        viewdir += vector;
+    }
+    return color;
+}
+#endif
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
-
 
     float Depth = texture2D(depthtex0, TexCoords).r;
     if(Depth == 1.0f){
@@ -349,6 +317,7 @@ void main(){
     }
 
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
+    vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
 
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
@@ -365,10 +334,7 @@ vec3 Vieww = ViewWw.xyz / ViewWw.w;
 vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
      vec3 viewDir = normalize(lightDir - Vieww.xyz);
        float specularStrength = 10.0;
-if (rainStrength == 1){
-     specularStrength = 1.0;
-}
-  //float specularStrength = 0.0;
+
   vec3 testLight = vec3(0.5, 0.25, 0.0);
 
   testLight.r = (testLight.r*2.6);
@@ -376,68 +342,57 @@ if (rainStrength == 1){
     testLight.b = (testLight.b*11.1);
   testLight = testLight / (testLight + 4.2);
 
-    vec4 fragPos = gbufferProjectionInverse * vec4(TexCoords, texture2D(depthtex1, TexCoords).r, 1.0);
-      fragPos = vec4(fragPos.xyz/fragPos.w, fragPos.w);
-
-
        vec3 reflectDir = reflect(-lightDir, Normal);
        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-
 
             //  vec3 reflectDir = reflect(-normalize(Vieww), normalize(Vieww));
             //  float spec = pow(max(dot(normalize(Vieww), reflectDir), 0.0), 32);
 
        vec3 specular = specularStrength * spec * testLight;
 
-
 #endif
 //--------------------------------------------------------------------------------------------
-float ShadowOn = NdotL;
-float ShadowOff = 0.25;
-//--------------------------------------------------------------------------------------------
-#ifdef VanillaAmbientOcclusion
-const float ambientOcclusionLevel = 1.0f;
-#endif
 vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
 vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
 vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
 vec3 viewPos1 = tmp1.xyz / tmp1.w;
+vec4 world_position = gbufferModelViewInverse * vec4(viewPos1, 1.0);
+vec3 ViewDir = normalize(viewPos1);
 
-vec3  color6      = texture2D(gcolor, texcoord).rgb;
-vec3  worldNormal1 = texture2D(gnormal, texcoord).xyz * 2.0 - 1.0;
-float depth1       = texture2D(depthtex0, texcoord).g;
+//--------------------------------------------------------------------------------------------
+vec3 ClipSpace = vec3(TexCoords, texture2D(depthtex0, TexCoords).x) * 2.0f - 1.0f;
 
-  if (distance(vec3(-1.0), Normal) > 0.0) {
-  //  vec3 rt = raytraceScreen(vec3(TexCoords, depth1), normalize(mat3(gbufferModelViewInverse) * Normal));
+vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
 
-//    color6   = mix(color6, texture2D(gcolor, rt.xy).rgb, rt.z * 0.75);
-}
+vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
 
-
-  vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
-    vec3 DiffuseAndSpecular = Diffuse + specular;
-  float  water =  texture2D(colortex2, texcoord).r * 255;
-
-  float dist = lD(Depth, near, far);
-  vec3 transmittance = exp(-vec3(0.1, 0.05, 0.02) * dist);
-  //	if(int(water) == 1 ) {
-  //    Diffuse += specular;
-  //    }else{
-    //          Diffuse += 0;
-  //    }
-//Diffuse += volumetric_light(viewPos1, shadowPos);
-    /* DRAWBUFFERS:0 */
-    vec3 screenPoss = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
-    vec3 clipPoss = screenPoss * 2.0 - 1.0;
-    vec4 tmps = gbufferProjectionInverse * vec4(clipPoss, 1.0);
-    vec3 viewPoss = tmps.xyz / tmps.w;
-    vec4 world_position = gbufferModelViewInverse * vec4(viewPoss, 1.0);
-
-
+vec3 ViewDirect = normalize(ViewSpace);
 vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
+//--------------------------------------------------------------------------------------------
+float ShadowOn = NdotL;
+float ShadowOff = 0.25;
+//--------------------------------------------------------------------------------------------
+vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
+  vec3 DiffuseAndSpecular = Diffuse + specular;
+//--------------------------------------------------------------------------------------------
+#ifdef VanillaAmbientOcclusion
+const float ambientOcclusionLevel = 1.0f;
+#endif
+//--------------------------------------------------------------------------------------------
+vec3 col3 = fresnel(rd, SSR_NORMALS);
 
-Diffuse *= fresnel(rd, Normal);
-//Diffuse *= color6;
-    gl_FragData[0] = vec4(OUTPUT, 1.0);
+//--------------------------------------------------------------------------------------------
+#ifdef SSR2
+Diffuse *= ComputeSSR(ViewDirect, ViewSpace, ClipSpace, NormalWater); //-фпс
+#endif
+
+vec4 reflection = vec4(1.);
+#ifdef SSR3
+///////////////////////////NORMAL +0.5 = обычно FRAG2 = рефракция нормалей воды
+ reflection = raytrace(ViewDirect, SSR_NORMALS);
+#endif
+//--------------------------------------------------------------------------------------------
+    /* DRAWBUFFERS:0 */
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*reflection;
 
 }

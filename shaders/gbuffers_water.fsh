@@ -47,6 +47,7 @@ uniform sampler2D composite;
 varying vec2 TexCoords;
 varying vec3 viewPos;
 varying vec3 normal;
+varying vec3 Normal;
 varying vec3 vworldpos;
 varying vec3 binormal;
 varying vec3 tangent;
@@ -72,13 +73,6 @@ float linearDepth(float depth){
 	return 2.0 * (near * far) / (far + near - (depth) * (far - near));
 }
 
-vec2 UnderWaterScreen(vec2 uv){
-float Xaxis = uv.x*15 + frameTimeCounter;
-float Yaxis = uv.y*15 + frameTimeCounter;
-      uv.y += cos(Xaxis+Yaxis) *0.01 * cos(Yaxis);
-      uv.x += sin(Xaxis-Yaxis) *0.01 * sin(Yaxis);
-      return uv;
-}
 //---------------------------------------------------------------------------------------------------------------------------
 float PI = 3.14;
 
@@ -136,7 +130,7 @@ return amplitude*wave2+amplitude*wave;
 void main() {
 	int id = int(entityId + 0.5);
 
-	vec4 color = texture2D(texture, texcoord.st);
+vec4 color = texture2D(texture, texcoord.st);
 vec4 Frensel =  vec4(1.0,1.0,1.0,1.0);
 vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
@@ -151,9 +145,9 @@ vec4 Custom = vec4(0.87);
 	cwater = cwater / (cwater + 4.2) * (1.0+2.0);
 
 //--------------------------------------------------------------------------------------
-  float fog = length(viewPos.xz)/5;
+float fog = length(viewPos.xz)/5;
 float frensel =  exp(-fog * FrensStrenght);
-        vec2 GetSreenRes = vec2(viewWidth, viewHeight);
+vec2 GetSreenRes = vec2(viewWidth, viewHeight);
 
 vec3 ShadowLightPosition = normalize(shadowLightPosition);
 vec3 Normal = normalize(normal);
@@ -188,7 +182,7 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
         bump = bump;
 
 
-      float bumpmult = 0.05;
+      float bumpmult = 0.07;
 
       bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
       mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
@@ -213,17 +207,16 @@ vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStren
 //--------------------------------------------------------------------------------------
 
 
-vec4 GlassOutput = texture2D(colortex0, texcoord.st);
-GlassOutput *= GaussBlur(colortex0, GetSreenRes);
 
-    vec4 outputWater = mix(fresnelColor, cwater, frensel)+(xDelta * yDelta);
+
+    vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 
       #ifdef SpecularWaterIceGlass
      outputWater +=(SpecularAngle*(SpecularTexture+cwater))*(xDelta * yDelta)*25;
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
-/* DRAWBUFFERS:01 */
+/* DRAWBUFFERS:05 */
 
 if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
@@ -231,6 +224,7 @@ if (id == 10006) {
 if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor
 gl_FragData[1] = frag2;
+// gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
 gl_FragData[2] = vec4(0.0);
 }
 if (id == 10014) {

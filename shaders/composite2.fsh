@@ -129,6 +129,7 @@ vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
 vec2 pos = FinalDirection.zx*CloudPositionY;
 
+#ifdef Cloud
        for(int i = 0; i < CloudQuality; i++)
 {
        awan += CloudNoiseType(pos) / d;
@@ -137,6 +138,7 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
        pos -= CloudMove*(speedNoise)*CloudSpeedNoiseMove;
 }
 
+#endif
 //-----------------------------------CLOUD_NOISE-------------------------------------------
     float sunAmount = max(dot(rd, L), 0.0);
 //-----------------------------------INSIDE------------------------------------------------
@@ -160,10 +162,11 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
 color = color + Clouds;
-     if (rainStrength == 1) {
-       color.b += 0.7;        color.r += 0.7;        color.g += 0.7;
-     }
 #endif
+
+if (rainStrength == 1) {
+color.b += 0.7;        color.r += 0.7;        color.g += 0.7;
+}
 
 #ifdef Stars
 color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, FinalDirection2.xz/222)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
