@@ -6,7 +6,6 @@
 #include "/files/filters/distort2.glsl"
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
-#include "/files/tonemaps/tonemap_uncharted.glsl"
 
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D colortex0;
@@ -15,6 +14,7 @@ uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
+uniform sampler2D colortex6;
 uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex;
@@ -61,6 +61,7 @@ in  float entityId;
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
+const int colortex6Format = RGB16;
 const int colortex7Format = RGBA32F;
 */
 #define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
@@ -90,10 +91,10 @@ const float ambientOcclusionLevel = 0.0f;
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
-#define SSR2
-#define SSR3
-#define SSR2_Steps 32  //[ 2  4  6  8  10  12  16  18  20  22  24  26  28  30  32 48 64 128 256]
+
 #define SSR_NORMALS NormalWater //[Normal]
+#define WaterSSR
+#define WaterAbsorption
 //--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -242,55 +243,49 @@ vec3 fresnel(vec3 raydir, vec3 normal){
     return F0+(1.0-F0)*pow(1.0-dot(-raydir, normal), 5.0);
 }
 //--------------------------------------------------------------------------------------------
-#ifdef SSR2
-vec3 ComputeSSR(vec3 viewDir, vec3 ViewSpace, vec3 ClipSpace, vec3 Normal){
+#ifdef WaterAbsorption
+vec3 Water_Absorbtion(vec2 TexCoords)
+{
+    //Settings
+    vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);//vec3(0.1, 0.25, 0.4);
 
+    float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
+    float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
 
+    float dist_fog = distance(depth_solid, depth_translucent);
 
-    vec3 RayDirection = reflect(viewDir, Normal);
-    vec3 ViewSpaceWithRayDirection = ViewSpace + RayDirection;
+    vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
 
-    vec4 ScreenSpaceRayDirectionW = gbufferProjection *  vec4(ViewSpaceWithRayDirection, 1.0f);
-    vec3 ScreenSpaceRayDirection = normalize(ScreenSpaceRayDirectionW.xyz / ScreenSpaceRayDirectionW.w - ClipSpace) * 0.01f;
-
-    vec3 RayMarchPosition = ClipSpace;
-
-    for(int i = 0; i < SSR2_Steps; i++){
-
-        RayMarchPosition += ScreenSpaceRayDirection;
-        vec3 ScreenSpace = RayMarchPosition * 0.5f + 0.5f;
-
-        if(any(lessThan(ScreenSpace.xy, vec2(0.0f))) || any(greaterThan(ScreenSpace.xy, vec2(1.0f)))){
-            return vec3(0.0f);
-        } else if(texture2D(depthtex0, ScreenSpace.xy).x < ScreenSpace.z){
-            return texture2D(colortex0,ScreenSpace.xy).rgb;
-        }
-
-    }
-    return texture2D(colortex0, RayMarchPosition.xy * 0.5f + 0.5f).rgb;
+    return absorption;
 }
 #endif
 //--------------------------------------------------------------------------------------------
-#ifdef SSR3
+#ifdef WaterSSR
 vec4 raytrace(vec3 viewdir, vec3 normal){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
     vec4 color = vec4(0.0);
+    vec4 watercolor_buffer = texture2D(colortex6, texcoord);
+
     vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
     vec3 vector = stp * rvector;
     vec3 oldpos = viewdir;
     viewdir += vector;
     int sr = 0;
+
     for(int i = 0; i < 40; i++){
-        vec3 pos = nvec3(gbufferProjection * nvec4(viewdir)) * 0.5 + 0.5;
-  //      if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0) break;
+    vec3 pos = nvec3(gbufferProjection * nvec4(viewdir)) * 0.5 + 0.5;
+
+        if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0);
+
         vec3 spos = vec3(pos.st, texture2D(depthtex0, pos.st).r);
         spos = nvec3(gbufferProjectionInverse * nvec4(spos * 2.0 - 1.0));
-		float err = abs(viewdir.z-spos.z);
-		if(err < pow(length(vector)*1.85,1.15) && texture2D(gaux1,pos.st).g < 0.01){
-                sr++;
-                if(sr >= maxf){
-                    float border = clamp(1.0 - pow(cdist(pos.st), 1.0), 0.0, 1.0);
-                    color = texture2D(gcolor, pos.st);
+	    	float err = abs(viewdir.z-spos.z);
+
+		if(err < pow(length(vector)*1.85,1.15) && texture2D(gaux1,pos.st).g < 0.01)
+    {      sr++;   if(sr >= maxf){
+
+  float border = clamp(1.0 - pow(cdist(pos.st), 1.0), 0.0, 1.0);
+  color = texture2D(gcolor, pos.st);
 					float land = texture2D(gaux1, pos.st).g;
 					land = float(land < 0.03);
 					spos.z = mix(viewdir.z,2000.0*(0.4+1.0*0.6),land);
@@ -334,23 +329,21 @@ vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
 vec3 Vieww = ViewWw.xyz / ViewWw.w;
 
 vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
-     vec3 viewDir = normalize(lightDir - Vieww.xyz);
-       float specularStrength = 10.0;
+vec3 viewDir = normalize(lightDir - Vieww.xyz);
 
-  vec3 testLight = vec3(0.5, 0.25, 0.0);
+vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
 
-  testLight.r = (testLight.r*2.6);
-    testLight.g = (testLight.g*1.4);
-    testLight.b = (testLight.b*11.1);
-  testLight = testLight / (testLight + 4.2);
+testLight.r = (testLight.r*2.6);
+testLight.g = (testLight.g*1.4);
+testLight.b = (testLight.b*11.1);
+testLight = testLight / (testLight + 4.2);
 
-       vec3 reflectDir = reflect(-lightDir, Normal);
-       float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+vec3 reflectDir = reflect(-lightDir, NormalWater);
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 
-            //  vec3 reflectDir = reflect(-normalize(Vieww), normalize(Vieww));
-            //  float spec = pow(max(dot(normalize(Vieww), reflectDir), 0.0), 32);
+vec4 watercolor_buffer2 = texture2D(colortex6, TexCoords)*testLight;
 
-       vec3 specular = specularStrength * spec * testLight;
+vec3 specular = 5 * spec * watercolor_buffer2.rgb;
 
 #endif
 //--------------------------------------------------------------------------------------------
@@ -382,25 +375,31 @@ const float ambientOcclusionLevel = 1.0f;
 #endif
 //--------------------------------------------------------------------------------------------
 vec3 col3 = fresnel(rd, SSR_NORMALS);
-
 //--------------------------------------------------------------------------------------------
-#ifdef SSR2
-Diffuse *= ComputeSSR(ViewDirect, ViewSpace, ClipSpace, NormalWater); //-фпс
-#endif
-
-vec4 reflection = vec4(1.);
+vec4 reflection = vec4(1.0);
+vec4 absorbtion = vec4(1.0);
+//--------------------------------------------------------------------------------------------
 #ifdef SSR3
-///////////////////////////NORMAL +0.5 = обычно FRAG2 = рефракция нормалей воды
 // reflection = raytrace(ViewDirect, SSR_NORMALS);
 #endif
-    bool WaterMask = texture2D(colortex7, TexCoords).x > 1.1f;
-    if(WaterMask){
+//--------------------------------------------------------------------------------------------
+#ifdef WaterSSR
+bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+if(isWater){
+
  reflection = raytrace(ViewDirect, NormalWater);
- } else {
+
+ }else{
+
      reflection = vec4(1.0);
  }
+#endif
+//--------------------------------------------------------------------------------------------
+#ifdef WaterAbsorption
+absorbtion.rgb *=Water_Absorbtion(TexCoords);
+#endif
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*reflection;
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0);
 
 }

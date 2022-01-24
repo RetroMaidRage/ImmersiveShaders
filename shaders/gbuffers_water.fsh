@@ -162,7 +162,7 @@ vec3 posxz = vworldpos.xyz;
 posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
 posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
 
-float deltaPos = 3.8;
+float deltaPos = 0.8;
 float h0 = waterH(posxz);
 float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
 float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
@@ -206,18 +206,18 @@ vec4 SpecularCustom= vec4(1.0, 1.0, 1.0, 1.0)*SpecularCustomStrenght;
 vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStrenght;
 //--------------------------------------------------------------------------------------
 
-
+   vec4 specular = SpecularCustomStrenght * SpecularAngle * SpecularTexture;
 
 
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 
       #ifdef SpecularWaterIceGlass
-     outputWater +=(SpecularAngle*(SpecularTexture+cwater))*(xDelta * yDelta)*25;
+    // outputWater +=specular;
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
-/* DRAWBUFFERS:057 */
-
+/* DRAWBUFFERS:0576 */
+//0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
 if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
 }
@@ -226,6 +226,7 @@ gl_FragData[0] = outputWater; //gcolor
 gl_FragData[1] = frag2;
 // gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
 gl_FragData[2] = vec4(10.0f);
+gl_FragData[3] =outputWater;
 }
 if (id == 10014) {
 gl_FragData[0] = outputIce*outputIce; //gcolor
