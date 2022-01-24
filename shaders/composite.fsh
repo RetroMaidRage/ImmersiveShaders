@@ -16,6 +16,7 @@ uniform sampler2D colortex4;
 uniform sampler2D colortex5;
 uniform sampler2D colortex6;
 uniform sampler2D colortex7;
+uniform sampler2D colortex8;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex;
 uniform sampler2D shadowtex0;
@@ -92,7 +93,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
 
-#define SSR_NORMALS NormalWater //[Normal]
+#define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
 #define WaterAbsorption
 //--------------------------------------------------------------------------------------------
@@ -252,7 +253,7 @@ vec3 Water_Absorbtion(vec2 TexCoords)
     float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
     float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
 
-    float dist_fog = distance(depth_solid, depth_translucent);
+    float dist_fog = distance(depth_solid, depth_translucent)/1.5;
 
     vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
 
@@ -315,6 +316,7 @@ void main(){
 
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
     vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
+    vec3 NormalWaterChill = normalize(texture2D(colortex8, TexCoords).rgb * 2.0f - 1.0f);
 
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
@@ -333,17 +335,13 @@ vec3 viewDir = normalize(lightDir - Vieww.xyz);
 
 vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
 
-testLight.r = (testLight.r*2.6);
-testLight.g = (testLight.g*1.4);
-testLight.b = (testLight.b*11.1);
-testLight = testLight / (testLight + 4.2);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
-float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 12);
 
 vec4 watercolor_buffer2 = texture2D(colortex6, TexCoords)*testLight;
 
-vec3 specular = 5 * spec * watercolor_buffer2.rgb;
+vec3 specular = 0.2 * spec * skyColor.rgb*watercolor_buffer2.rgb;
 
 #endif
 //--------------------------------------------------------------------------------------------
@@ -368,13 +366,13 @@ float ShadowOn = NdotL;
 float ShadowOff = 0.25;
 //--------------------------------------------------------------------------------------------
 vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
-  vec3 DiffuseAndSpecular = Diffuse + specular;
+
 //--------------------------------------------------------------------------------------------
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
 #endif
 //--------------------------------------------------------------------------------------------
-vec3 col3 = fresnel(rd, SSR_NORMALS);
+vec3 col3 = fresnel(rd, SSR_WaterNormals);
 //--------------------------------------------------------------------------------------------
 vec4 reflection = vec4(1.0);
 vec4 absorbtion = vec4(1.0);
@@ -387,7 +385,7 @@ vec4 absorbtion = vec4(1.0);
 bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 if(isWater){
 
- reflection = raytrace(ViewDirect, NormalWater);
+ reflection = raytrace(ViewDirect, SSR_WaterNormals);
 
  }else{
 

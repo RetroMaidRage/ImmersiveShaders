@@ -58,6 +58,7 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 //------------------------------------------------------------------------------------------
+#ifdef Stars
 float stars(in vec2 x, float numCells, float size, float br)
 {
     vec2 n = x * numCells;
@@ -78,6 +79,7 @@ float stars(in vec2 x, float numCells, float size, float br)
 
     return br * (smoothstep(.95, 1., (1. - sqrt(d))));
 }
+#endif
 //--------------------------------------------MAIN-----------------------------------------
 void main() {
 //--------------------------------------------POS------------------------------------------
@@ -154,8 +156,11 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
     vec4 fogColor = mix(vec4(CloudColorOutSun, 1.0), vec4(CloudColorSun, 1.0), pow(sunAmount,1.0));
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
-    color = color / (color + 65.2) * (1.0+2.0);
-
+    #ifdef Cloud
+    color = color / (color + 35.2) * (1.0+2.0);
+    #else
+        color = color / (color + 55.2) * (1.0+2.0);
+    #endif
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
 

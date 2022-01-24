@@ -27,7 +27,7 @@ varying vec3 wpos;
 varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
-#define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
+#define waves_strenght 0.085 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1]
 #define BLOCK_WAVE
 const float pi = 3.14f;
 
@@ -60,7 +60,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 
 				 if (fy > 0.002) {
 	float displacement = 0.0;
-				 float wave = 0.085 * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
+				 float wave = waves_strenght * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
 											+ 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
 											displacement = clamp(wave, -fy, 1.0-fy);
 											vpos.y += displacement;

@@ -6,7 +6,7 @@ varying vec4 glcolor;
 uniform float frameTimeCounter;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
-#define waves_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
+#define waves_rain_strenght 5 //[1 2 3 4 5 6 7 8 9 10]
 
 void main() {
 
@@ -18,7 +18,7 @@ void main() {
 	#ifdef waves
 			float speed = 0.1;
 
-				position.x += sin((tick * pi / (28.0 * speed)) + (position.x + 0.0) * 0.1 + (position.z + waves_strenght) * 0.1);
+				position.x += sin((tick * pi / (28.0 * speed)) + (position.x + 0.0) * 0.1 + (position.z + waves_rain_strenght) * 0.1);
 						position.z += 1.0;
 						#endif
 gl_Position = gl_ProjectionMatrix * (gl_ModelViewMatrix * position);

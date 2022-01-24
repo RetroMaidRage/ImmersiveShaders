@@ -56,13 +56,14 @@ varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define WaterType Custom //[Custom Texture]
 #define WaterTransparent 2.0  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
+#define WaterBumpStrenght 0.02 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define FrenselTexture Frensel //[FrenselUseTexture]
 #define FrensStrenght 0.015   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-#define SpecularWaterIceGlass
-#define SpecularTexture SpecularCustom //[SpecularCustom SpecularUseTexture]
-#define specularDistance 50 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
-#define specularTextureStrenght 0.7 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
-#define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+//#define SpecularWaterIceGlass
+//#define SpecularTexture SpecularCustom //[SpecularCustom SpecularUseTexture]
+//#define specularDistance 50 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+//#define specularTextureStrenght 0.7 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
+//#define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //---------------------------------------------------------------------------------------------------------------------------
 float timeSpeed = 2.0;
 float     GetDepthLinear(in vec2 coord) {
@@ -182,7 +183,7 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
         bump = bump;
 
 
-      float bumpmult = 0.07;
+      float bumpmult = WaterBumpStrenght;
 
       bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
       mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
@@ -192,30 +193,13 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
       frag2 = vec4(normalize(bump * tbnMatrix) * 0.5 + 0.5, 1.0);
 
 //---------------------------------------------------------------------------------------------------------------------------
- float SpecularAngle = pow(max(dot(halfDir, Normal), 0.0),specularDistance);
 
- if (isEyeInWater == 1) {
- SpecularAngle = 0;
-}
-
-if (rainStrength == 1) {
-SpecularAngle = 0;
-}
-
-vec4 SpecularCustom= vec4(1.0, 1.0, 1.0, 1.0)*SpecularCustomStrenght;
-vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStrenght;
-//--------------------------------------------------------------------------------------
-
-   vec4 specular = SpecularCustomStrenght * SpecularAngle * SpecularTexture;
 
 
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 
-      #ifdef SpecularWaterIceGlass
-    // outputWater +=specular;
-       outputIce += (SpecularAngle*SpecularTexture);
-      #endif
+
 /* DRAWBUFFERS:0576 */
 //0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
 if (id == 10006) {

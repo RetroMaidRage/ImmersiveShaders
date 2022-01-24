@@ -59,24 +59,7 @@ uniform int isEyeInWater;
    float timeSpeed = 2.0;
 
 //--------------------------------------------------------------------------------------------------------
-   float makeWaves(vec2 uv, float theTime, float offset)
-   {
-       float result = 0.0;
-       float direction = 0.0;
-       float sineWave = 0.0;
-       vec2 randVec = vec2(1.0,0.0);
-       float i;
-       for(int n = 0; n < 16; n++)
-       {
-           i = float(n)+offset;
-           randVec = randomVec2(float(i));
-     		direction = (uv.x*randVec.x+uv.y*randVec.y);
-           sineWave = sin(direction*randomVal(i+1.6516)+theTime*timeSpeed);
-           sineWave = smoothstep(0.0,1.0,sineWave);
-       	result += randomVal(i+123.0)*sineWave;
-       }
-       return result;
-   }
+
 //--------------------------------------------------------------------------------------------------------
 float waterH(vec3 posxz) {
 
@@ -192,14 +175,7 @@ vec4 colorToAddRain = texture2D(colortex0, texcoord.st)* Color * sunlightStrengt
 
 vec4 puddle_color = texture2D(colortex0, texcoord.st)* Color;
 
-float result;
-float result2;
 
-result = makeWaves( vworldpos.xz*10+vec2(frameTimeCounter*2,0.0), frameTimeCounter, 0.1);
-result2 = makeWaves(  vworldpos.xz*10-vec2(frameTimeCounter*0.8*2,0.0), frameTimeCounter*0.8+0.06, 0.26);
-result = smoothstep(0.4,1.1,1.0-abs(result));
-result2 = smoothstep(0.4,1.1,1.0-abs(result2));
-result = 2.0*smoothstep(0.35,1.8,(result+result2)*0.5);
 //--------------------------------------------------------------------------------------------------------
 vec4 Albedo = texture2D(texture, TexCoords) * Color;
 //----------------------------------------FakeCloudShadows------------------------------------------------
@@ -309,9 +285,9 @@ Albedo += (SpecularAngle*Albedo)*specularTerrainStrenght;
 #ifdef FakeCaustic
 if (isEyeInWater == 1.0){
 
-vec4 ccolor = vec4(0.2, 0.2, 1.0, 1.0)*result;
+vec4 ccolor = vec4(0.2, 0.2, 1.0, 1.0);
 
-Albedo = puddle_color+(colorToAddWater*2)+(result/2);
+Albedo = puddle_color+(colorToAddWater*2);
 
 }
 #endif

@@ -142,6 +142,7 @@ const int colortex2Format = RGB16;
    color.rgb *= (1.0f - dist) /Vignette_Strenght;
    }
 //------------------------------------------------------------------------------------------------------------------
+#ifdef RainDrops
 vec2 RainDropCalc(vec2 p) {
 
     p += simplex2D(p*0.1) * 3.; // distort drops
@@ -178,7 +179,9 @@ vec2 RainDropCalc(vec2 p) {
 
     return drop * dropPos + trailPos * trail;
 }
+#endif
 //------------------------------------------------------------------------------------------------------------------
+#ifdef LensFlare
 vec4 lensFlare(in vec2 coord)
 {
   //https://www.shadertoy.com/view/ls3czM
@@ -205,8 +208,9 @@ vec4 lensflarealbedo = texture(colortex0, offset);
 
     return result;
 }
+#endif
 
-
+#ifdef UnderWater
 vec2 UnderWaterScreen(vec2 uv){
 float Xaxis = uv.x*15 + frameTimeCounter;
 float Yaxis = uv.y*15 + frameTimeCounter;
@@ -214,6 +218,7 @@ float Yaxis = uv.y*15 + frameTimeCounter;
       uv.x += sin(Xaxis-Yaxis) *0.01 * sin(Yaxis);
       return uv;
 }
+#endif
 
 vec2 snakingCamera(vec2 uv){
 float Yaxis = uv.x + frameTimeCounter;
@@ -247,24 +252,14 @@ vec3 lOff(){
     return l;
 
 }
-vec3 applyFog2( in vec3  rgb,      // original color of the pixel
-               in float distance, // camera to point distance
-               in vec3  rayDir,
-							 							 in float coeff,   // camera to point vector
-               in vec3  sunDir )  // sun light direction
-{
-    float fogAmount = 1.0 - exp( -distance*coeff );
-    float sunAmount = max( dot( rayDir, sunDir ), 0.0 );
-    vec3  fogColor  = mix( vec3(0.5,0.6,1.7), // bluish
-                           vec3(1.0,0.9,0.7), // yellowish
-                           pow(sunAmount,1.0) );
-    return mix( rgb, fogColor, fogAmount );
-}
+
 //--------------------------------------------MAIN------------------------------------------------------
 float H2 (in vec2 st) {
     return fract(sin(dot(st,vec2(12.9898,8.233))) * 43758.5453123);
 }
 
+
+#ifdef LensFlare
 vec3 lensflarer(vec2 uv,vec2 pos)
 {
 	vec2 main = uv-pos;
@@ -307,6 +302,7 @@ vec3 lensflarer(vec2 uv,vec2 pos)
 
 	return c;
 }
+#endif
 
 void main() {
     //vec2 uv = gl_FragCoord.xy / vec2(viewWidth, viewHeight -0.5);
@@ -589,13 +585,14 @@ VignetteColor(color.rgb);
 #endif
 //------------------------------------------------------------------------------------------------------------------
 
+
+#ifdef FilmGrainRain
 float invLum = clamp(1.0 - dot(vec3(0.299,0.587,0.114), color.rgb), 0.0, 1.0);
 float seed = (uv.x + .0) * (uv.y + 4.0) * (mod(frameTimeCounter,10.0) + 12342.876);
 float grainR = fract((mod(seed, 13.0) + 1.0) * (mod(seed, 127.0) + 1.0)) - 0.5;
 float grainG = fract((mod(seed, 15.0) + 1.0) * (mod(seed, 109.0) + 1.0)) - 0.5;
 float grainB = fract((mod(seed,  7.0) + 1.0) * (mod(seed, 113.0) + 1.0)) - 0.5;
 vec3 grain = vec3(grainR, grainG, grainB);
-#ifdef FilmGrainRain
   if (rainStrength == 1.0){
        color.rgb += grain/FilmGrainStrenght;
      }
