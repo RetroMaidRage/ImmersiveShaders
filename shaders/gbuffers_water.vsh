@@ -130,7 +130,7 @@ mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
 							vec3 bump = newnormal;
 							bump = bump;
 
-						float bumpmult = 0.05;
+						float bumpmult = 10.05;
 
 
 					bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
