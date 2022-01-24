@@ -15,6 +15,7 @@ uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
+uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex;
 uniform sampler2D shadowtex0;
@@ -60,6 +61,7 @@ in  float entityId;
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
+const int colortex7Format = RGBA32F;
 */
 #define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
 #define NoiseTextureResolution 256 //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
@@ -389,8 +391,14 @@ Diffuse *= ComputeSSR(ViewDirect, ViewSpace, ClipSpace, NormalWater); //-фпс
 vec4 reflection = vec4(1.);
 #ifdef SSR3
 ///////////////////////////NORMAL +0.5 = обычно FRAG2 = рефракция нормалей воды
- reflection = raytrace(ViewDirect, SSR_NORMALS);
+// reflection = raytrace(ViewDirect, SSR_NORMALS);
 #endif
+    bool WaterMask = texture2D(colortex7, TexCoords).x > 1.1f;
+    if(WaterMask){
+ reflection = raytrace(ViewDirect, NormalWater);
+ } else {
+     reflection = vec4(1.0);
+ }
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*reflection;

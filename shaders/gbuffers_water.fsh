@@ -216,7 +216,7 @@ vec4 SpecularUseTexture = texture2D(colortex0, texcoord.st)*specularTextureStren
      outputWater +=(SpecularAngle*(SpecularTexture+cwater))*(xDelta * yDelta)*25;
        outputIce += (SpecularAngle*SpecularTexture);
       #endif
-/* DRAWBUFFERS:05 */
+/* DRAWBUFFERS:057 */
 
 if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
@@ -225,7 +225,7 @@ if (id == 10001) {
 gl_FragData[0] = outputWater; //gcolor
 gl_FragData[1] = frag2;
 // gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
-gl_FragData[2] = vec4(0.0);
+gl_FragData[2] = vec4(10.0f);
 }
 if (id == 10014) {
 gl_FragData[0] = outputIce*outputIce; //gcolor
