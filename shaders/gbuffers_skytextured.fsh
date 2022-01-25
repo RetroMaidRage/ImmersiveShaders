@@ -15,7 +15,7 @@ uniform vec3 sunPosition;
 #define sunColorGreen 7.4
 #define sunColorBlue 11.1
 #define SunDiskSize 1
-#define SunDisk Vanilla //[Vanilla Custom]
+#define SunDisk Custom //[Vanilla Custom]
 /* rou
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;

@@ -78,16 +78,24 @@ const float ambientOcclusionLevel = 0.0f;
 #define shadowResolution 2048 //[512 1024 1536 2048 3072 4096 8192]
 #define SHADOW_SAMPLES 2 //[1 2 3 4 5 6]
 #define ColShadowBoost 7 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
+#define GrassShadow ShadowOff //[ShadowOn ShadowOff]
+
+#define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 #define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
-#define GrassShadow ShadowOff //[ShadowOn ShadowOff]
+
 #define ColorSettings Summertime //[Summertime Default Composition]
-#define TerrainColorType DynamicTime //[DynamicTime StaticTime]
+
 #define SkyLightingStrenght 0.5 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
+
 #define VanillaAmbientOcclusion
+
 #define specularLight
 
-#define VL_STEPS 12
+#define volumetric_Fog
+#define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
+#define VL_Strenght 0.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_UseJitter NoJitter //[jitter]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
@@ -107,11 +115,17 @@ vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
 vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
 vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
+vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
+vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
+vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
 //--------------------------------------------------------------------------------------------
 const float stp = 1.2;			//size of one step for raytracing algorithm
 const float ref = 0.1;			//refinement multiplier
 const float inc = 2.2;			//increasement factor at each step
 const int maxf = 4;				//number of refinements
+
+
+// Offset the start position.
 
 //--------------------------------------------------------------------------------------------
 vec3 nvec3(vec4 pos){
@@ -235,8 +249,38 @@ vec3 GetShadow(float depth) {
     return ShadowAccum;
 }
 //--------------------------------------------------------------------------------------------
-#ifdef vl
+#ifdef volumetric_Fog
+vec3 computeVL(vec3 viewPos) {
+    vec3 color = vec3(0.0);
+    float INV_SAMPLES = 1.0 /  VL_Samples;
 
+    vec3 startPos = projMAD3(shadowProjection, transMAD3(shadowModelView, gbufferModelViewInverse[3].xyz));
+    vec3 endPos   = projMAD3(shadowProjection, transMAD3(shadowModelView, mat3(gbufferModelViewInverse) * viewPos));
+
+    float jitter = fract(frameTimeCounter + bayer16(gl_FragCoord.xy));
+    float NoJitter = 1.0;
+
+    float dist   = distance(startPos, endPos);
+    vec3 rayDir  = (normalize(endPos - startPos) * dist) * INV_SAMPLES*VL_UseJitter;
+
+    vec3 rayPos = startPos;
+    for(int i = 0; i < VL_Samples; i++) {
+        rayPos += rayDir;
+
+        vec3 samplePos = vec3(DistortPosition(rayPos.xy), rayPos.z) * 0.5 + 0.5;
+
+        float shadowVisibility0 = step(samplePos.z - 1e-3, texture(shadowtex0, samplePos.xy).r);
+        float shadowVisibility1 = step(samplePos.z - 1e-3, texture(shadowtex1, samplePos.xy).r);
+
+        vec4 shadowColor      = texture(shadowcolor0, samplePos.xy);
+        vec3 transmittedColor = shadowColor.rgb * (1.0 - shadowColor.a);
+
+        float extinction = 1.0 - exp(-dist * 1);
+        color += (mix(transmittedColor * shadowVisibility1, vec3(0.0), shadowVisibility0) + shadowVisibility0) * extinction;
+      //  color *= colorVL;
+    }
+    return color * INV_SAMPLES;
+}
 #endif
 //--------------------------------------------------------------------------------------------
 vec3 fresnel(vec3 raydir, vec3 normal){
@@ -386,6 +430,7 @@ bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 if(isWater){
 
  reflection = raytrace(ViewDirect, SSR_WaterNormals);
+ reflection.rgb * fresnel(rd, SSR_WaterNormals);
 
  }else{
 
@@ -395,6 +440,10 @@ if(isWater){
 //--------------------------------------------------------------------------------------------
 #ifdef WaterAbsorption
 absorbtion.rgb *=Water_Absorbtion(TexCoords);
+#endif
+//--------------------------------------------------------------------------------------------
+#ifdef volumetric_Fog
+Diffuse += computeVL(ViewSpace)*VL_Strenght;
 #endif
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
