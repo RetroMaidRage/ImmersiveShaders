@@ -94,7 +94,7 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define volumetric_Fog
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
-#define VL_Strenght 0.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_Strenght 0.27 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define VL_UseJitter NoJitter //[jitter]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
@@ -378,14 +378,14 @@ vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
 vec3 viewDir = normalize(lightDir - Vieww.xyz);
 
 vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
-
+vec4 testLight2 = vec4(0.25, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 12);
 
 vec4 watercolor_buffer2 = texture2D(colortex6, TexCoords)*testLight;
 
-vec3 specular = 0.2 * spec * skyColor.rgb*watercolor_buffer2.rgb;
+vec3 specular = 1.0 * spec *testLight2.rgb;
 
 #endif
 //--------------------------------------------------------------------------------------------
@@ -431,7 +431,7 @@ if(isWater){
 
  reflection = raytrace(ViewDirect, SSR_WaterNormals);
  reflection.rgb * fresnel(rd, SSR_WaterNormals);
-
+  reflection+vec4(specular, 1.0);
  }else{
 
      reflection = vec4(1.0);
@@ -447,6 +447,6 @@ Diffuse += computeVL(ViewSpace)*VL_Strenght;
 #endif
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0);
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion/2*reflection+vec4(specular, 1.0);
 
 }

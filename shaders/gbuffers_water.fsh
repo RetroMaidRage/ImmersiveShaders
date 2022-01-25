@@ -142,8 +142,8 @@ vec4 Custom = vec4(0.87);
 	vec4 cwater = vec4(WaterTransparent)*glcolor*WaterType;
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
-	  cwater.b = (cwater.b*0.6);
-	cwater = cwater / (cwater + 4.2) * (1.0+2.0);
+	 // cwater.b = (cwater.b*0.6);
+	cwater = cwater / (cwater + 6.2) * (1.0+2.0);
 
 //--------------------------------------------------------------------------------------
 float fog = length(viewPos.xz)/5;
@@ -198,7 +198,7 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
 
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
-
+	vec4 w = vec4(0.1, 0.2, 0.3, 0.87);
 
 /* DRAWBUFFERS:0576 */
 //0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
