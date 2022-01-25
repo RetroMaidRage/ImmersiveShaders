@@ -252,6 +252,12 @@ vec3 GetShadow(float depth) {
 #ifdef volumetric_Fog
 vec3 computeVL(vec3 viewPos) {
     vec3 color = vec3(0.0);
+    vec3 colorr = vec3(0.0, 0.0,0.0);
+     colorr = fogColor*1.5;
+
+    vec3 colorVL =  colorr;
+    colorVL.r = colorr.r*2;
+
     float INV_SAMPLES = 1.0 /  VL_Samples;
 
     vec3 startPos = projMAD3(shadowProjection, transMAD3(shadowModelView, gbufferModelViewInverse[3].xyz));
@@ -277,6 +283,7 @@ vec3 computeVL(vec3 viewPos) {
 
         float extinction = 1.0 - exp(-dist * 1);
         color += (mix(transmittedColor * shadowVisibility1, vec3(0.0), shadowVisibility0) + shadowVisibility0) * extinction;
+
       //  color *= colorVL;
     }
     return color * INV_SAMPLES;
@@ -297,7 +304,7 @@ vec3 Water_Absorbtion(vec2 TexCoords)
     float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
     float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
 
-    float dist_fog = distance(depth_solid, depth_translucent)/1.5;
+    float dist_fog = distance(depth_solid, depth_translucent);
 
     vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
 
@@ -358,6 +365,13 @@ void main(){
         return;
     }
 
+    vec3 ClipSpacee = vec3(TexCoords, Depth) * 2.0f - 1.0f;
+    vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
+    vec3 Vieww = ViewWw.xyz / ViewWw.w;
+
+    vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
+    vec3 viewDir = normalize(lightDir - Vieww.xyz);
+
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
     vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
     vec3 NormalWaterChill = normalize(texture2D(colortex8, TexCoords).rgb * 2.0f - 1.0f);
@@ -367,26 +381,26 @@ void main(){
     vec3 LightmapColor = GetLightmapColor(Lightmap);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
 
+    bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+    vec3 specular;
 //--------------------------------------------------------------------------------------------
 #ifdef specularLight
 
-vec3 ClipSpacee = vec3(TexCoords, Depth) * 2.0f - 1.0f;
-vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
-vec3 Vieww = ViewWw.xyz / ViewWw.w;
+if(isWater){
 
-vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
-vec3 viewDir = normalize(lightDir - Vieww.xyz);
+  vec3 testLight3 = fogColor*1.5;
+
+  vec3 Summertime3 =  testLight3;
+  Summertime3.r = testLight3.r*2;
 
 vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
-vec4 testLight2 = vec4(0.25, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
+vec4 testLight2 = vec4(0.35, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
-float spec = pow(max(dot(viewDir, reflectDir), 0.0), 12);
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 
-vec4 watercolor_buffer2 = texture2D(colortex6, TexCoords)*testLight;
-
-vec3 specular = 1.0 * spec *testLight2.rgb;
-
+ specular = 0.5 * spec *testLight2.rgb;
+}
 #endif
 //--------------------------------------------------------------------------------------------
 vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
@@ -426,7 +440,6 @@ vec4 absorbtion = vec4(1.0);
 #endif
 //--------------------------------------------------------------------------------------------
 #ifdef WaterSSR
-bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 if(isWater){
 
  reflection = raytrace(ViewDirect, SSR_WaterNormals);
@@ -447,6 +460,6 @@ Diffuse += computeVL(ViewSpace)*VL_Strenght;
 #endif
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion/2*reflection+vec4(specular, 1.0);
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0);
 
 }

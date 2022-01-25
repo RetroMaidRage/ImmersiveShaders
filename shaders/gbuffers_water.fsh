@@ -199,7 +199,7 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 	vec4 w = vec4(0.1, 0.2, 0.3, 0.87);
-
+	vec4 w2 = vec4(1.0);
 /* DRAWBUFFERS:0576 */
 //0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
 if (id == 10006) {

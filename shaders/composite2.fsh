@@ -157,7 +157,7 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
     #ifdef Cloud
-    color = color / (color + 35.2) * (1.0+2.0);
+    color = color / (color + 50.2) * (1.0+2.0);
     #else
         color = color / (color + 55.2) * (1.0+2.0);
     #endif
