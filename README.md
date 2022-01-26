@@ -1,8 +1,8 @@
 # ImmersiveShaders
 A minecraft shaderpack
 - !! Shader is not yet claimed for release or distribution !!
-- Current Version: 0.9pre
-![Alt text](/screenshots/2021-11-30_20.53.21.png?raw=true "Optional Title")
+- Current Version: 1.0pre
+![Alt text](/screenshots/preview.png?raw=true "Optional Title")
 # Features & Functions
 >You can setup all values/functions.
 ### ScreenSpace
@@ -21,29 +21,37 @@ A minecraft shaderpack
 - Eye Adaptation
 ### WorldSpace
 - Shadows
-- CustomLighting
-- AmbientOcclusion (only for testing, by capt tatsu.)
+- Volumetric Fog
+- Custom Lighting
 - CustomVanillaSkyRendering
 - Custom Atmosphere
 - Water
-- WavingStuff
+- Screen Space Reflections
+- Waving Stuff
 - Fog
+- Ground Dynamic Fog
 - Clouds
+- Stars
 - Specular Lighting
+- Gradient Terrain
 - Rain
+- Rain Puddles
 - Fake Shadows
 - Fake Caustic
 # Desription/Changelog
 ImmersiveShaders - this project focused on good optimization and flexible customization.
 Without LightShafts with mc max settings with 10 chunk: fps 100-150 (videocard gtx 1050 ti).
 ### Problems
- - godrays don't have filter, because of this laggy.
+ - Worldtime.
+ - Screen Space Reflections
  - etc.
  - You can report of bug to my discord: Quiet#8987
 ### Planing
-- VolumetricLight
-- Custom sun
+- RSM
+- Better Water
+- Atmosphere Scattering
+- Light FLickr
 - Optimization
 ### Credits
-//SSAO BY BSL CAPT TATSU
-It's only for understanding.
+ImmersiveShaders/Summertime by RetroMaidRage
+if my shader have code from your shader, and you don't like this, tell me =)
