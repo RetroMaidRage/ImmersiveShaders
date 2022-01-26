@@ -49,8 +49,8 @@ Without LightShafts with mc max settings with 10 chunk: fps 100-150 (videocard g
 - RSM
 - Better Water
 - Atmosphere Scattering
-- Light FLickr
+- Light Fдicker
 - Optimization
 ### Credits
 ImmersiveShaders/Summertime by RetroMaidRage
-if my shader have code from your shader, and you don't like this, tell me =)
+-if my shader have code from your shader, and you don't like this, tell me =)
