@@ -63,6 +63,7 @@ const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
 const int colortex6Format = RGB16;
+const int colortex8Format = RGB16;
 const int colortex7Format = RGBA32F;
 */
 #define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
@@ -94,8 +95,9 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define volumetric_Fog
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
-#define VL_Strenght 0.27 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_Strenght 0.7 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define VL_UseJitter NoJitter //[jitter]
+#define VL_Color  StaticVolumetricColor //[DynamicVolumetricColor]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
@@ -103,7 +105,9 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
-#define WaterAbsorption
+//#define WaterAbsorption
+
+//#define RainPuddles
 //--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -123,9 +127,6 @@ const float stp = 1.2;			//size of one step for raytracing algorithm
 const float ref = 0.1;			//refinement multiplier
 const float inc = 2.2;			//increasement factor at each step
 const int maxf = 4;				//number of refinements
-
-
-// Offset the start position.
 
 //--------------------------------------------------------------------------------------------
 vec3 nvec3(vec4 pos){
@@ -258,6 +259,9 @@ vec3 computeVL(vec3 viewPos) {
     vec3 colorVL =  colorr;
     colorVL.r = colorr.r*2;
 
+    vec3 DynamicVolumetricColor = (colorVL*TimeSunrise+ fogColor*TimeNoon+colorVL*TimeSunset+vec3(0.0)*TimeMidnight);
+    vec3 StaticVolumetricColor=vec3(0.0);
+
     float INV_SAMPLES = 1.0 /  VL_Samples;
 
     vec3 startPos = projMAD3(shadowProjection, transMAD3(shadowModelView, gbufferModelViewInverse[3].xyz));
@@ -282,7 +286,7 @@ vec3 computeVL(vec3 viewPos) {
         vec3 transmittedColor = shadowColor.rgb * (1.0 - shadowColor.a);
 
         float extinction = 1.0 - exp(-dist * 1);
-        color += (mix(transmittedColor * shadowVisibility1, vec3(0.0), shadowVisibility0) + shadowVisibility0) * extinction;
+        color += (mix(transmittedColor * shadowVisibility1, VL_Color, shadowVisibility0) + shadowVisibility0) * extinction*fogColor;
 
       //  color *= colorVL;
     }
@@ -354,7 +358,28 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
     }
     return color;
 }
+
+
 #endif
+float getRainPuddles(vec3 fposition){
+	vec3 pPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
+	pPos = nvec3(gbufferProjectionInverse * nvec4(pPos * 2.0 - 1.0));
+	vec4 pUw = gbufferModelViewInverse * vec4(pPos,1.0);
+	vec3 worldPos = (pUw.xyz + cameraPosition.xyz);
+
+	vec2 coord = (worldPos.xz/10000);
+
+	float rainPuddles = texture2D(noisetex, fract(coord.xy*8)).x;
+	rainPuddles += texture2D(noisetex, fract(coord.xy*4)).x;
+	rainPuddles += texture2D(noisetex, fract(coord.xy*2)).x;
+	rainPuddles += texture2D(noisetex, fract(coord.xy/2)).x;
+
+	float strength = max(rainPuddles-2.15,0.0);
+	float dL = 0.5;
+	float L = (1.0 - (pow(dL,strength)));
+
+	return L;
+}
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
@@ -394,12 +419,12 @@ if(isWater){
   Summertime3.r = testLight3.r*2;
 
 vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
-vec4 testLight2 = vec4(0.35, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
+vec4 testLight2 = vec4(0.75, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 
- specular = 0.5 * spec *testLight2.rgb;
+ specular = 0.2 * spec *fogColor.rgb;
 }
 #endif
 //--------------------------------------------------------------------------------------------
@@ -418,6 +443,15 @@ vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
 vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
 
 vec3 ViewDirect = normalize(ViewSpace);
+
+vec3 screenPos5 = vec3(texcoord, texture2D(depthtex0, texcoord).r);
+vec3 clipPos5 = screenPos5 * 2.0 - 1.0;
+vec4 tmp5 = gbufferProjectionInverse * vec4(clipPos5, 1.0);
+vec3 viewPos5 = tmp5.xyz / tmp5.w;
+vec3 eyePlayerPos5 = mat3(gbufferModelViewInverse) * viewPos5;
+vec3 feetPlayerPos5 = eyePlayerPos5 + gbufferModelViewInverse[3].xyz;
+vec3 worldPos5 = feetPlayerPos5 + cameraPosition;
+
 vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 //--------------------------------------------------------------------------------------------
 float ShadowOn = NdotL;
@@ -434,6 +468,8 @@ vec3 col3 = fresnel(rd, SSR_WaterNormals);
 //--------------------------------------------------------------------------------------------
 vec4 reflection = vec4(1.0);
 vec4 absorbtion = vec4(1.0);
+float VL_Strenght2;
+vec4 rainpuddles;
 //--------------------------------------------------------------------------------------------
 #ifdef SSR3
 // reflection = raytrace(ViewDirect, SSR_NORMALS);
@@ -444,7 +480,6 @@ if(isWater){
 
  reflection = raytrace(ViewDirect, SSR_WaterNormals);
  reflection.rgb * fresnel(rd, SSR_WaterNormals);
-  reflection+vec4(specular, 1.0);
  }else{
 
      reflection = vec4(1.0);
@@ -452,14 +487,37 @@ if(isWater){
 #endif
 //--------------------------------------------------------------------------------------------
 #ifdef WaterAbsorption
+if(isWater){
 absorbtion.rgb *=Water_Absorbtion(TexCoords);
+}
 #endif
 //--------------------------------------------------------------------------------------------
 #ifdef volumetric_Fog
+if ((worldTime < 14000 || worldTime > 22000)) {
 Diffuse += computeVL(ViewSpace)*VL_Strenght;
+}
+#endif
+
+
+
+vec3 FinalDirection = vec3(0.0);
+
+
+
+
+//-----------------------------------------------------------------------------------------
+#ifdef RainPuddles
+float rainpuddleee = getRainPuddles(worldPos5);
+vec4 reflectionpuddle = raytrace(ViewDirect, Normal);
+reflectionpuddle.rgb*=fresnel(rd, SSR_WaterNormals);
+vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
+vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
+rainPuddles +=rainpuddleee*reflectionpuddle;
+ rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflectionpuddle;
+
 #endif
 //--------------------------------------------------------------------------------------------
-    /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0);
-
+    /* DRAWBUFFERS:08 */
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0)+rainpuddles;
+    gl_FragData[1] = reflection;
 }

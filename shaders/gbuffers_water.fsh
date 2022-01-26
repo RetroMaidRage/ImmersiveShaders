@@ -58,13 +58,19 @@ varying float iswater;
 #define WaterTransparent 2.0  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
 #define WaterBumpStrenght 0.25 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define FrenselTexture Frensel //[FrenselUseTexture]
-#define FrensStrenght 0.015   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+#define FrensStrenght 0.15   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+#define WaterStyle Sea //[River River2 Ocean Ocean2]
 //#define SpecularWaterIceGlass
 //#define SpecularTexture SpecularCustom //[SpecularCustom SpecularUseTexture]
 //#define specularDistance 50 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //#define specularTextureStrenght 0.7 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //#define SpecularCustomStrenght 1 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 11 12 13 14 15 16 17 18 19 20]
 //---------------------------------------------------------------------------------------------------------------------------
+float timefract = worldTime;
+float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
+float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
+float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
+float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 float timeSpeed = 2.0;
 float     GetDepthLinear(in vec2 coord) {
    return 2.0f * near * far / (far + near - (2.0f * texture2D(depthtex0, coord).x - 1.0f) * (far - near));
@@ -137,12 +143,12 @@ vec4 FrenselUseTexture = texture2D(texture, texcoord.st);
 
 vec4 fresnelColor =  FrenselTexture;
 vec4 Texture = color;
-vec4 Custom = vec4(0.87);
+vec4 Custom = vec4(1.0);
 
-	vec4 cwater = vec4(WaterTransparent)*glcolor*WaterType;
+	vec4 cwater = WaterTransparent*glcolor*WaterType;
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
-	 // cwater.b = (cwater.b*0.6);
+	  cwater.b = (cwater.b*0.6);
 	cwater = cwater / (cwater + 6.2) * (1.0+2.0);
 
 //--------------------------------------------------------------------------------------
@@ -160,8 +166,10 @@ vec3 reflectDir = reflect(lightDir, viewDir);
 //---------------------------------------------------------------------------------------------------------------------------
 vec3 posxz = vworldpos.xyz;
 
+
 posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
 posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
+
 
 float deltaPos = 0.8;
 float h0 = waterH(posxz);
@@ -174,12 +182,56 @@ float xDelta = ((h1-h0)+(h0-h2))/deltaPos;
 float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
 
     vec3 newnormal = normalize(vec3(xDelta,yDelta,1.0-xDelta*xDelta-yDelta*yDelta));
+    //---------------------------------------------------------------------------------------------------------------------------
+        //---------------------------------------------222222222222222222222222---------------------------------------------------------
+            //---------------------------------------------------------------------------------------------------------------------------
+    vec3 posxz2 = vworldpos.xyz;
+  	posxz2.x += sin(posxz2.z+frameTimeCounter)*0.2;
+  	posxz2.z += cos(posxz2.x+frameTimeCounter*0.5)*0.2;
+
+  	float wave = 0.05 * sin(2 * 3.14 * (frameTimeCounter + posxz2.x  + posxz2.z / 2.0))
+  		        + 0.05 * sin(2 * 3.14 * (frameTimeCounter*1.2 + posxz2.x / 2.0 + posxz2.z ));
+
+  	vec3 newnormal2 = vec3(sin(wave*PI),1.0-cos(wave*PI),wave);
+    //---------------------------------------------------------------------------------------------------------------------------
+        //---------------------------------------------3333333333333333333333333------------------------------------------------------
+            //---------------------------------------------------------------------------------------------------------------------------
+    vec3 posxz3 = vworldpos.xyz;
+    posxz3 *= fbm(posxz.xz);
+
+    float oceannoise = sin((posxz3.x + frameTimeCounter) * 1.05)+sin((posxz3.z + frameTimeCounter) * 1.05)*22;
+
+    	vec3 newnormal3 = vec3(sin(oceannoise*PI),1.0-cos(oceannoise*PI),oceannoise);
 //---------------------------------------------------------------------------------------------------------------------------
+            //---------------------------------------------4444444444444444444444------------------------------------------------------
+        //---------------------------------------------------------------------------------------------------------------------------
+vec3 posxz4 = vworldpos.xyz;
+posxz4 *= noise(posxz.xz);
+
+float wnoise2 = sin((posxz4.x+frameTimeCounter) * 0.05)+sin((posxz4.z+frameTimeCounter*0.5) * 0.05)*2;
+
+  vec3 newnormal4 = vec3(sin(wnoise2*PI),1.0-cos(wnoise2*PI),sin(wnoise2+frameTimeCounter));
+//---------------------------------------------------------------------------------------------------------------------------
+    //---------------------------------------------55555555555555555555555--------------------------------------------------
+        //---------------------------------------------------------------------------------------------------------------------------
+vec3 posxz5 = vworldpos.xyz;
+posxz5 *= SimplexPerlin2D(posxz.xz);
+
+float wnoise = sin((posxz5.x + frameTimeCounter) * 0.05)+sin((posxz5.z + frameTimeCounter) * 0.05)/22;
+
+  vec3 newnormal5 = vec3(sin(wnoise*PI),1.0-cos(wnoise*PI),wnoise);
+//---------------------------------------------------------------------------------------------------------------------------
+vec3 Sea = newnormal;
+vec3 River = newnormal2;
+vec3 River2 = newnormal3;
+vec3 Ocean = newnormal4;
+vec3 Ocean2 = newnormal5;
+
     vec4 frag2;
       frag2 = vec4((normal) * 0.5f + 0.5f, 1.0f);
 
 
-      vec3 bump = newnormal;
+      vec3 bump = WaterStyle;
         bump = bump;
 
 
@@ -193,20 +245,23 @@ float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
       frag2 = vec4(normalize(bump * tbnMatrix) * 0.5 + 0.5, 1.0);
 
 //---------------------------------------------------------------------------------------------------------------------------
-
-
+//---------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------
+vec4 w = vec4(0.1, 0.2, 0.3, 0.27);
+vec4 w2 = vec4(0.8);
 
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
-	vec4 w = vec4(0.1, 0.2, 0.3, 0.87);
-	vec4 w2 = vec4(1.0);
+
 /* DRAWBUFFERS:0576 */
 //0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
 if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
 }
 if (id == 10001) {
-gl_FragData[0] = outputWater; //gcolor
+gl_FragData[0] = outputWater;
 gl_FragData[1] = frag2;
 // gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
 gl_FragData[2] = vec4(10.0f);

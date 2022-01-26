@@ -53,7 +53,7 @@ const int colortex2Format = RGB16;
 //--------------------------------------------DEFINE------------------------------------------
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
-#define SUNRAYS
+//#define SUNRAYS
 
 #define SkyRenderingType composite //[colortex0 composite]
 #define SUNRAYS_DECAY 0.90 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]

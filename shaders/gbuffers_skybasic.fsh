@@ -69,8 +69,8 @@ vec3 nightFogColor = vec3(0.1, 0.5, 1.0)*0.14;
 vec3 sunsetFogColor = vec3(0.8, 0.66, 110.5)*1.2;
 vec3 sunsetSkyColor = vec3(0.8, 0.66, 0.5)*skyColor;
 
-vec3 customSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + skyColor*TimeSunset + nightColor*TimeMidnight);
-vec3 customFogColor = (fogColor*TimeSunrise + fogColor*TimeNoon + sunsetFogColor*TimeSunset + fogColor*TimeMidnight);
+vec3 customSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + skyColor*TimeMidnight);
+vec3 customFogColor = (sunsetSkyColor*TimeSunrise + fogColor*TimeNoon + sunsetFogColor*TimeSunset + fogColor*TimeMidnight);
 
 vec3 o = vec3(1.0);
 //-------------------------POSITION----------------------------------

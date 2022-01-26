@@ -20,6 +20,7 @@ uniform int worldTime;
 uniform sampler2D gaux4;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
+uniform vec3 sunPosition;
 varying vec2 texcoord;
 varying vec2 TexCoords;
 uniform vec3 shadowLightPosition;
@@ -157,16 +158,20 @@ vec2 pos = FinalDirection.zx*CloudPositionY;
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
     #ifdef Cloud
-    color = color / (color + 50.2) * (1.0+2.0);
+    color = color / (color + 22.2) * (1.0+2.0);
     #else
-        color = color / (color + 55.2) * (1.0+2.0);
+        color = color / (color + 22.2) * (1.0+2.0);
     #endif
 //----------------------------------------------------------------------------------------
     Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
 
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
+if ((worldTime < 14000 || worldTime > 22000))
+
+  {
 color = color + Clouds;
+}
 #endif
 
 if (rainStrength == 1) {
