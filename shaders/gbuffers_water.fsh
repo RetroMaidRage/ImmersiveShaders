@@ -55,7 +55,7 @@ varying vec3 viewVector;
 varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define WaterType Custom //[Custom Texture]
-#define WaterTransparent 2.0  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
+#define WaterTransparent 2.35  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
 #define WaterBumpStrenght 0.25 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define FrenselTexture Frensel //[FrenselUseTexture]
 #define FrensStrenght 0.15   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
@@ -90,6 +90,7 @@ vec2 dy = dFdy(texcoord.xy);
 
 
 //---------------------------------------------------------------------------------------------------------------------------
+
 float waterH(vec3 posxz) {
 
 float wave = 10.0;
@@ -157,7 +158,7 @@ float frensel =  exp(-fog * FrensStrenght);
 vec2 GetSreenRes = vec2(viewWidth, viewHeight);
 
 vec3 ShadowLightPosition = normalize(shadowLightPosition);
-vec3 Normal = normalize(normal);
+vec3 Normal = normalize(Normal);
 vec3 lightDir = normalize(ShadowLightPosition);
 
 vec3 viewDir = -normalize(viewPos);
@@ -171,7 +172,7 @@ posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
 posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
 
 
-float deltaPos = 0.8;
+float deltaPos = 0.2;
 float h0 = waterH(posxz);
 float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
 float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
@@ -226,9 +227,11 @@ vec3 River = newnormal2;
 vec3 River2 = newnormal3;
 vec3 Ocean = newnormal4;
 vec3 Ocean2 = newnormal5;
+vec3 Chill = Normal;
 
     vec4 frag2;
-      frag2 = vec4((normal) * 0.5f + 0.5f, 1.0f);
+      frag2 = vec4((Normal) * 0.5f + 0.5f, 1.0f);
+
 
 
       vec3 bump = WaterStyle;

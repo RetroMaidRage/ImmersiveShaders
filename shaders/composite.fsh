@@ -175,7 +175,7 @@ vec2 AdjustLightmap(in vec2 Lightmap){
 vec3 GetLightmapColor(in vec2 Lightmap){
 
     Lightmap = AdjustLightmap(Lightmap);
-    
+
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
@@ -260,7 +260,7 @@ vec3 computeVL(vec3 viewPos) {
     colorVL.r = colorr.r*2;
 
     vec3 DynamicVolumetricColor = (colorVL*TimeSunrise+ fogColor*TimeNoon+colorVL*TimeSunset+vec3(0.0)*TimeMidnight);
-    vec3 StaticVolumetricColor=vec3(0.0);
+    vec3 StaticVolumetricColor=vec3(1.0);
 
     float INV_SAMPLES = 1.0 /  VL_Samples;
 
@@ -284,7 +284,9 @@ vec3 computeVL(vec3 viewPos) {
 
         vec4 shadowColor      = texture(shadowcolor0, samplePos.xy);
         vec3 transmittedColor = shadowColor.rgb * (1.0 - shadowColor.a);
-
+        if ((worldTime < 22000 || worldTime > 500)){
+  VL_Color = vec3(0.2, 0.0, 0.0);
+}
         float extinction = 1.0 - exp(-dist * 1);
         color += (mix(transmittedColor * shadowVisibility1, VL_Color, shadowVisibility0) + shadowVisibility0) * extinction*fogColor;
 
@@ -462,7 +464,6 @@ vec4 testLight2 = vec4(0.75, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-
  specular = 0.2 * spec *fogColor.rgb;
 }
 #endif

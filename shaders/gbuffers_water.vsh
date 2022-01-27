@@ -28,11 +28,12 @@ varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define waves
 #define waves_strenght 0.085 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1]
+#define WaveMultiplyVertex
 #define BLOCK_WAVE
 const float pi = 3.14f;
-
+const float PI = 3.14f;
 float tick = frameTimeCounter;
-
+//---------------------------------------------------------------------------------------------------------------------------
 void main() {
 	iswater = 0.0f;
 	float displacement = 0.0;
@@ -41,10 +42,10 @@ void main() {
 	vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
 	worldPos = eyePlayerPos + cameraPosition;
-		viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 	entityId = mc_Entity.x;
 	int blockId = int(entityId);
-		glcolor = gl_Color;
+	glcolor = gl_Color;
 texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	vec4 position = gl_ModelViewMatrix * gl_Vertex;
@@ -52,9 +53,26 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
   vworldpos = vpos.xyz + cameraPosition;
 	normal = gl_NormalMatrix * gl_Normal;
 	wpos = vworldpos;
+//---------------------------------------------------------------------------------------------------------------------------
   #ifdef waves
-	if (mc_Entity.x == 10001.0) {
 
+	vec3 posxz2 = vworldpos.xyz;
+	posxz2.x += sin(posxz2.z+frameTimeCounter)*0.2;
+	posxz2.z += cos(posxz2.x+frameTimeCounter*0.5)*0.2;
+
+	float wave = 0.05 * sin(2 * 3.14 * (frameTimeCounter + posxz2.x  + posxz2.z / 2.0))
+						+ 0.05 * sin(2 * 3.14 * (frameTimeCounter*1.2 + posxz2.x / 2.0 + posxz2.z ));
+
+	vec3 newnormal2 = vec3(sin(wave*3.14),1.0-cos(wave*3.14),wave);
+//---------------------------------------------------------------------------------------------------------------------------
+	vec3 posxz3 = vworldpos.xyz;
+
+
+	float oceannoise = sin((posxz3.x + frameTimeCounter) * 1.05)+sin((posxz3.z + frameTimeCounter) * 1.05);
+
+		vec3 newnormal3 = vec3(sin(oceannoise*PI),1.0-cos(oceannoise*PI),oceannoise)/22;
+//---------------------------------------------------------------------------------------------------------------------------
+	if (mc_Entity.x == 10001.0) {
 
 			 float fy = fract(vworldpos.y + 0.001);
 
@@ -63,7 +81,15 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 				 float wave = waves_strenght * sin(2 * pi * (tick*0.75 + vworldpos.x /  7.0 + vworldpos.z / 13.0))
 											+ 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
 											displacement = clamp(wave, -fy, 1.0-fy);
+
 											vpos.y += displacement;
+
+										//		vpos.y += wave;
+										#ifdef WaveMultiplyVertex
+										newnormal2.y *= 2;
+													vpos.xyz += newnormal2;
+													#endif
+														//			vpos.xyz += newnormal3;
 
 	}}
 #endif
@@ -150,6 +176,6 @@ gl_FogFragCoord = gl_Position.z;
     TexCoords = gl_MultiTexCoord0.st;
     LightmapCoords = mat2(gl_TextureMatrix[1]) * gl_MultiTexCoord1.st;
     LightmapCoords = (LightmapCoords * 33.05f / 32.0f) - (1.05f / 32.0f);
-    Normal = gl_NormalMatrix * gl_Normal;
+    Normal = tbnMatrix * normal;
     Color = gl_Color;
 }
