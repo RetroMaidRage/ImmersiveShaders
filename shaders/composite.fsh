@@ -63,7 +63,7 @@ const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
 const int colortex2Format = RGB16;
 const int colortex6Format = RGB16;
-const int colortex8Format = RGB16;
+const int colortex8Format = RGBA32F;
 const int colortex7Format = RGBA32F;
 */
 #define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
@@ -105,7 +105,8 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
-//#define WaterAbsorption
+#define WaterAbsorption
+#define WaterAbsorptionStrenght 1.0 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 
 //#define RainPuddles
 //--------------------------------------------------------------------------------------------
@@ -115,6 +116,7 @@ float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefr
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
 //--------------------------------------------------------------------------------------------
+    bool isHand = texture2D(colortex7, TexCoords).x > 1.1f;
 vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
 vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
@@ -307,19 +309,22 @@ vec3 Water_Absorbtion(vec2 TexCoords)
 
     vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);
 
+vec3 w2 = vec3(0.08);
+
     float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
     float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
 
     float dist_fog = distance(depth_solid, depth_translucent);
 
-    vec3 absorption = exp(-WATER_FOG_COLOR * dist_fog);
+    vec3 absorption = exp(-w2 * dist_fog)*WaterAbsorptionStrenght;
 
-    return absorption;
+    return max(absorption,  0.5);
 }
 #endif
 //--------------------------------------------------------------------------------------------
 #ifdef WaterSSR
 vec4 raytrace(vec3 viewdir, vec3 normal){
+  if(isHand){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
     vec4 color = vec4(0.0);
     vec4 watercolor_buffer = texture2D(colortex6, texcoord);
@@ -359,6 +364,7 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
         viewdir += vector;
     }
     return color;
+  }
 }
 
 
@@ -463,8 +469,8 @@ vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
 vec4 testLight2 = vec4(0.75, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
-float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
- specular = 0.2 * spec *fogColor.rgb;
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 512);
+ specular = 1.5 * spec *Summertime3;
 }
 #endif
 //--------------------------------------------------------------------------------------------

@@ -55,10 +55,10 @@ varying vec3 viewVector;
 varying float iswater;
 //--------------------------------------------DEFINE------------------------------------------
 #define WaterType Custom //[Custom Texture]
-#define WaterTransparent 2.35  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
+#define WaterTransparent 2.75  //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5]
 #define WaterBumpStrenght 0.25 ///[0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.2142 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define FrenselTexture Frensel //[FrenselUseTexture]
-#define FrensStrenght 0.15   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+#define FrensStrenght 0.05   //[[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
 #define WaterStyle Sea //[River River2 Ocean Ocean2]
 //#define SpecularWaterIceGlass
 //#define SpecularTexture SpecularCustom //[SpecularCustom SpecularUseTexture]
