@@ -104,8 +104,8 @@ void main() {
   float d2 = 1.400;
   vec4 Clouds = vec4(0.0);
   vec4 Clouds2 = vec4(0.0);
-  vec3 FinalDirection = vec3(0.0);
-  vec3 FinalDirection2 = vec3(0.0);
+  vec3 Cloud_Pos = vec3(0.0);
+  vec3 Stars_Position = vec3(0.0);
   float speed = frameTimeCounter * CloudSpeed;
   float speedNoise = frameTimeCounter * 0.003; // Глеб мэски
   float CloudMove = speed * 0.127 * pow(d, 0.9);
@@ -119,18 +119,18 @@ if(texture2D(depthtex0, texcoord).r == 1.0 && sign(FinalDirection + cameraPositi
 if(texture2D(depthtex0, texcoord).r == 1.0) {
 #endif
 
-FinalDirection = world_position.xyz / world_position.y;
-FinalDirection2 = world_position.xyz / world_position.y;
-FinalDirection.y *= 8000.0;
-FinalDirection2.y *= 8000.0;
+Cloud_Pos = world_position.xyz / world_position.y;
+Stars_Position = world_position.xyz / world_position.y;
+Cloud_Pos.y *= 8000.0;
+Stars_Position.y *= 8000.0;
 //-----------------------------------------------------------------------------------------
 #ifdef CloudGlobalMove
-FinalDirection -=  CloudMove;
+Cloud_Pos -=  CloudMove;
 #endif
 //-----------------------------------CLOUD_NOISE-------------------------------------------
 vec3 rd = normalize(vec3(worldPos.x,worldPos.y,worldPos.z));
 vec3 L = mat3(gbufferModelViewInverse) * normalize(shadowLightPosition.xyz);
-vec2 pos = FinalDirection.zx*CloudPositionY;
+vec2 pos = Cloud_Pos.zx*CloudPositionY;
 
 #ifdef Cloud
        for(int i = 0; i < CloudQuality; i++)
@@ -179,9 +179,9 @@ color.b += 0.7;        color.r += 0.7;        color.g += 0.7;
 }
 
 #ifdef Stars
-color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, FinalDirection2.xz/222)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
+color += stars(Stars_Position.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, Stars_Position.xz/222)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm
 #ifdef StarsAlways
-color += stars(FinalDirection2.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, FinalDirection2.xz/222);
+color += stars(Stars_Position.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, Stars_Position.xz/222);
 #endif
 #endif
 //----------------------------------------------------------------------------------------

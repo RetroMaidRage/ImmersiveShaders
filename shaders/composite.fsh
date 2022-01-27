@@ -95,7 +95,7 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define volumetric_Fog
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
-#define VL_Strenght 0.7 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_Strenght 0.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define VL_UseJitter NoJitter //[jitter]
 #define VL_Color  StaticVolumetricColor //[DynamicVolumetricColor]
 
@@ -173,9 +173,9 @@ vec2 AdjustLightmap(in vec2 Lightmap){
 }
 //--------------------------------------------------------------------------------------------
 vec3 GetLightmapColor(in vec2 Lightmap){
+
     Lightmap = AdjustLightmap(Lightmap);
-
-
+    
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
@@ -234,7 +234,7 @@ vec3 GetShadow(float depth) {
     float RandomAngle = texture2D(noisetex, TexCoords * 20.0f).r * 100.0f;
 
     float cosTheta = cos(RandomAngle);
-	float sinTheta = sin(RandomAngle);
+	  float sinTheta = sin(RandomAngle);
 
     mat2 Rotation =  mat2(cosTheta, -sinTheta, sinTheta, cosTheta) / shadowResolution;
 
@@ -302,8 +302,8 @@ vec3 fresnel(vec3 raydir, vec3 normal){
 #ifdef WaterAbsorption
 vec3 Water_Absorbtion(vec2 TexCoords)
 {
-    //Settings
-    vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);//vec3(0.1, 0.25, 0.4);
+
+    vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);
 
     float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
     float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
@@ -361,24 +361,64 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
 
 
 #endif
-float getRainPuddles(vec3 fposition){
-	vec3 pPos = vec3(texcoord.st, texture2D(depthtex0, texcoord.st).r);
-	pPos = nvec3(gbufferProjectionInverse * nvec4(pPos * 2.0 - 1.0));
-	vec4 pUw = gbufferModelViewInverse * vec4(pPos,1.0);
-	vec3 worldPos = (pUw.xyz + cameraPosition.xyz);
 
-	vec2 coord = (worldPos.xz/10000);
+vec4 raytraceGround(vec3 viewdir, vec3 normal){
+  //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
+    vec4 color = vec4(0.0);
+    vec4 watercolor_buffer = texture2D(colortex6, texcoord);
 
-	float rainPuddles = texture2D(noisetex, fract(coord.xy*8)).x;
-	rainPuddles += texture2D(noisetex, fract(coord.xy*4)).x;
-	rainPuddles += texture2D(noisetex, fract(coord.xy*2)).x;
-	rainPuddles += texture2D(noisetex, fract(coord.xy/2)).x;
+    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
+    vec3 vector = stp * rvector;
+    vec3 oldpos = viewdir;
+    viewdir += vector;
+    int sr = 0;
+
+    for(int i = 0; i < 40; i++){
+    vec3 pos = nvec3(gbufferProjection * nvec4(viewdir)) * 0.5 + 0.5;
+
+        if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0) break;
+
+        vec3 spos = vec3(pos.st, texture2D(depthtex0, pos.st).r);
+        spos = nvec3(gbufferProjectionInverse * nvec4(spos * 2.0 - 1.0));
+	    	float err = abs(viewdir.z-spos.z);
+
+		if(err < pow(length(vector)*1.85,1.15) && texture2D(gaux1,pos.st).g < 0.01)
+    {      sr++;   if(sr >= maxf){
+
+  float border = clamp(1.0 - pow(cdist(pos.st), 1.0), 0.0, 1.0);
+  color = texture2D(gcolor, pos.st);
+					float land = texture2D(gaux1, pos.st).g;
+					land = float(land < 0.03);
+					spos.z = mix(viewdir.z,2000.0*(0.4+1.0*0.6),land);
+					color.a = 1.0;
+                    color.a *= border;
+                    break;
+                }
+                viewdir = oldpos;
+                vector *=ref;
+        }
+        vector *= inc;
+        oldpos = viewdir;
+        viewdir += vector;
+    }
+    return color;
+}
+
+float getRainPuddles(vec3 worldpos, vec3 Normal){
+
+	vec2 coord = (worldpos.xz/10000);
+
+	float rainPuddles = texture2D(noisetex, (coord.xy*8)).x;
+	rainPuddles += texture2D(noisetex, (coord.xy*4)).x;
+	rainPuddles += texture2D(noisetex, (coord.xy*2)).x;
+	rainPuddles += texture2D(noisetex, (coord.xy/2)).x;
 
 	float strength = max(rainPuddles-2.15,0.0);
-	float dL = 0.5;
-	float L = (1.0 - (pow(dL,strength)));
 
-	return L;
+  vec3 reflectDir = reflect(worldpos, Normal);
+
+
+	return strength;
 }
 //--------------------------------------------------------------------------------------------
 void main(){
@@ -399,7 +439,6 @@ void main(){
 
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
     vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
-    vec3 NormalWaterChill = normalize(texture2D(colortex8, TexCoords).rgb * 2.0f - 1.0f);
 
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
@@ -507,8 +546,8 @@ vec3 FinalDirection = vec3(0.0);
 
 //-----------------------------------------------------------------------------------------
 #ifdef RainPuddles
-float rainpuddleee = getRainPuddles(worldPos5);
-vec4 reflectionpuddle = raytrace(ViewDirect, Normal);
+float rainpuddleee = getRainPuddles(worldPos5, Normal);
+vec4 reflectionpuddle = raytraceGround(ViewDirect, Normal);
 reflectionpuddle.rgb*=fresnel(rd, SSR_WaterNormals);
 vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
@@ -517,7 +556,7 @@ rainPuddles +=rainpuddleee*reflectionpuddle;
 
 #endif
 //--------------------------------------------------------------------------------------------
-    /* DRAWBUFFERS:08 */
+    /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0)+rainpuddles;
-    gl_FragData[1] = reflection;
+
 }
