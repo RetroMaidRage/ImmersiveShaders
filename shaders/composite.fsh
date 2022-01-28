@@ -318,7 +318,7 @@ vec3 w2 = vec3(0.08);
 
     vec3 absorption = exp(-w2 * dist_fog)*WaterAbsorptionStrenght;
 
-    return max(absorption,  0.5);
+    return max(absorption,  0.7);
 }
 #endif
 //--------------------------------------------------------------------------------------------
@@ -328,6 +328,7 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
     vec4 color = vec4(0.0);
     vec4 watercolor_buffer = texture2D(colortex6, texcoord);
+    float jitter = fract(frameTimeCounter + bayer256(gl_FragCoord.xy));
 
     vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
     vec3 vector = stp * rvector;
@@ -338,7 +339,7 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
     for(int i = 0; i < 40; i++){
     vec3 pos = nvec3(gbufferProjection * nvec4(viewdir)) * 0.5 + 0.5;
 
-        if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0);
+        if(pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 || pos.z < 0 || pos.z > 1.0) break;
 
         vec3 spos = vec3(pos.st, texture2D(depthtex0, pos.st).r);
         spos = nvec3(gbufferProjectionInverse * nvec4(spos * 2.0 - 1.0));
@@ -372,7 +373,10 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
 
 vec4 raytraceGround(vec3 viewdir, vec3 normal){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
-    vec4 color = vec4(0.0);
+      vec4 color = vec4(0.0);
+    if(isHand){
+     color = vec4(0.0);
+  }else{
     vec4 watercolor_buffer = texture2D(colortex6, texcoord);
 
     vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
@@ -410,7 +414,7 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
         viewdir += vector;
     }
     return color;
-}
+}}
 
 float getRainPuddles(vec3 worldpos, vec3 Normal){
 
@@ -510,25 +514,25 @@ vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambien
 const float ambientOcclusionLevel = 1.0f;
 #endif
 //--------------------------------------------------------------------------------------------
-vec3 col3 = fresnel(rd, SSR_WaterNormals);
+vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2;
 //--------------------------------------------------------------------------------------------
 vec4 reflection = vec4(1.0);
+vec4 reflection2 = vec4(1.0);
+vec4 reflectionRain = vec4(1.0);
+vec4 reflection2Rain = vec4(1.0);
 vec4 absorbtion = vec4(1.0);
 float VL_Strenght2;
 vec4 rainpuddles;
-//--------------------------------------------------------------------------------------------
-#ifdef SSR3
-// reflection = raytrace(ViewDirect, SSR_NORMALS);
-#endif
 //--------------------------------------------------------------------------------------------
 #ifdef WaterSSR
 if(isWater){
 
  reflection = raytrace(ViewDirect, SSR_WaterNormals);
  reflection.rgb * fresnel(rd, SSR_WaterNormals);
+ 	reflection2.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflection.rgb,frenselcolor*reflection.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
  }else{
 
-     reflection = vec4(1.0);
+     reflection2 = vec4(1.0);
  }
 #endif
 //--------------------------------------------------------------------------------------------
@@ -544,26 +548,25 @@ Diffuse += computeVL(ViewSpace)*VL_Strenght;
 }
 #endif
 
-
-
-vec3 FinalDirection = vec3(0.0);
-
-
-
-
 //-----------------------------------------------------------------------------------------
 #ifdef RainPuddles
+
 float rainpuddleee = getRainPuddles(worldPos5, Normal);
 vec4 reflectionpuddle = raytraceGround(ViewDirect, Normal);
 reflectionpuddle.rgb*=fresnel(rd, SSR_WaterNormals);
 vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
-rainPuddles +=rainpuddleee*reflectionpuddle;
- rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflectionpuddle;
+
+ reflectionRain = raytraceGround(ViewDirect, Normal);
+ reflectionRain.rgb * fresnel(rd, Normal);
+ reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,col3*reflectionRain.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
+
+    rainPuddles +=rainpuddleee*reflection2Rain;
+    rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
 
 #endif
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection+vec4(specular, 1.0)+rainpuddles;
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+vec4(specular, 1.0)+rainpuddles;
 
 }

@@ -114,7 +114,7 @@ void main() {
 //-----------------------------------------------------------------------------------------
 
 #ifdef UseSkyFix
-if(texture2D(depthtex0, texcoord).r == 1.0 && sign(FinalDirection + cameraPosition.y) == sign(eyePlayerPos.y)) {
+if(texture2D(depthtex0, texcoord).r == 1.0 && sign(Cloud_Pos + cameraPosition.y) == sign(eyePlayerPos.y)) {
 #else
 if(texture2D(depthtex0, texcoord).r == 1.0) {
 #endif
