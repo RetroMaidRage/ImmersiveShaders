@@ -559,9 +559,9 @@ vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
 
  reflectionRain = raytraceGround(ViewDirect, Normal);
  reflectionRain.rgb * fresnel(rd, Normal);
- reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,col3*reflectionRain.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
+ reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,frenselcolor*reflectionRain.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
 
-    rainPuddles +=rainpuddleee*reflection2Rain;
+   rainPuddles +=rainpuddleee*reflection2Rain;
     rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
 
 #endif
