@@ -97,7 +97,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
 #define VL_Strenght 0.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define VL_UseJitter NoJitter //[jitter]
-#define VL_Color  StaticVolumetricColor //[DynamicVolumetricColor]
+#define VL_Color  DynamicVolumetricColor //[StaticVolumetricColor]
 
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
@@ -115,12 +115,21 @@ float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) +
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
+
+bool sunrise =   (worldTime < 22000 || worldTime > 500);
+bool day =   (worldTime < 1000 || worldTime > 8500);
+bool sunset =   (worldTime < 8500 || worldTime > 12000);
+bool night =   (worldTime < 12000 || worldTime > 21000);
 //--------------------------------------------------------------------------------------------
-    bool isHand = texture2D(colortex7, TexCoords).x > 1.1f;
+bool isHand = texture2D(colortex7, TexCoords).x > 1.1f;
+
 vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
 vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
 vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
+
+vec3 DynamicSkyColor2 = (sunsetSkyColor*skyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*skyColor*TimeSunset + nightSkyColor*skyColor*TimeMidnight);
+
 vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
 vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
 vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
@@ -181,7 +190,7 @@ vec3 GetLightmapColor(in vec2 Lightmap){
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
-    vec3 SkyLighting = Lightmap.y * DynamicSkyColor * SkyLightingStrenght;
+    vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
 
     vec3 LightmapLighting = TorchLighting + SkyLighting;
 
