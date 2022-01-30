@@ -653,6 +653,7 @@ vec2 uvv = gl_FragCoord.xy / GetSreenRes.xy - 0.5;
 uvv.x *= GetSreenRes.x/GetSreenRes.y; //fix aspect ratio
 vec4 ccccc = texture2D(colortex0, texcoord.st);
 //color.rgb+=lensflarer(uvv,LightPos);
+
 gl_FragColor = color;
 
 }

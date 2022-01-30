@@ -51,7 +51,7 @@ const int colortex2Format = RGB16;
 #define StarsNum 15	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024 ]
 #define StarsSize 0.025 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define StarsBright 2.0	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
-//#define UseSkyFix
+#define UseSkyFix
 //------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -113,11 +113,9 @@ void main() {
   vec4 color2 = texture2D(gcolor, texcoord);
 //-----------------------------------------------------------------------------------------
 
-#ifdef UseSkyFix
-if(texture2D(depthtex0, texcoord).r == 1.0 && sign(Cloud_Pos + cameraPosition.y) == sign(eyePlayerPos.y)) {
-#else
+
 if(texture2D(depthtex0, texcoord).r == 1.0) {
-#endif
+
 
 Cloud_Pos = world_position.xyz / world_position.y;
 Stars_Position = world_position.xyz / world_position.y;
@@ -158,13 +156,21 @@ vec2 pos = Cloud_Pos.zx*CloudPositionY;
 //-----------------------------------------------------------------------------------------
 		color.r = (color.r*2); color.g = (color.g*3); color.b = (color.b*5);
     #ifdef Cloud
-    color = color / (color + 22.2) * (1.0+2.0);
+    color = color / (color + 40.2) * (1.0+2.0);
     #else
         color = color / (color + 22.2) * (1.0+2.0);
     #endif
 //----------------------------------------------------------------------------------------
-    Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+#ifdef UseSkyFix
+if(texture2D(depthtex0, texcoord).r == 1.0 && sign(Cloud_Pos + cameraPosition.y) == sign(eyePlayerPos.y)) {
 
+Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+    }else{
+Clouds = mix(color, fogColor, pow(abs(rainStrength), (CloudDestiny-(1.0 + rainStrength))));
+}
+#else
+Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+#endif
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
 if ((worldTime < 14000 || worldTime > 22000))

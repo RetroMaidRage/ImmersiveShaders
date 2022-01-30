@@ -87,7 +87,7 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define ColorSettings Summertime //[Summertime Default Composition]
 
-#define SkyLightingStrenght 0.5 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
+#define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 
 #define VanillaAmbientOcclusion
 
@@ -129,7 +129,7 @@ vec3 nightSkyColor = vec3(0.001,0.0015,0.0025);
 vec3 DynamicSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + nightSkyColor*TimeMidnight);
 
 vec3 DynamicSkyColor2 = (sunsetSkyColor*skyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*skyColor*TimeSunset + nightSkyColor*skyColor*TimeMidnight);
-
+//--------------------------------------------------------------------------------------------
 vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
 vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
 vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
@@ -138,7 +138,6 @@ const float stp = 1.2;			//size of one step for raytracing algorithm
 const float ref = 0.1;			//refinement multiplier
 const float inc = 2.2;			//increasement factor at each step
 const int maxf = 4;				//number of refinements
-
 //--------------------------------------------------------------------------------------------
 vec3 nvec3(vec4 pos){
     return pos.xyz/pos.w;
@@ -183,11 +182,13 @@ vec2 AdjustLightmap(in vec2 Lightmap){
     return NewLightMap;
 }
 //--------------------------------------------------------------------------------------------
-vec3 GetLightmapColor(in vec2 Lightmap){
+vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos){
 
     Lightmap = AdjustLightmap(Lightmap);
 
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
+
+    vec4 tcolo = texture2D(noisetex, worldpos.xz/2222);
 
     vec3 TorchLighting = Lightmap.x * TorchColor;
     vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
@@ -455,6 +456,14 @@ void main(){
     vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
     vec3 Vieww = ViewWw.xyz / ViewWw.w;
 
+    vec3 screenPos5 = vec3(texcoord, texture2D(depthtex0, texcoord).r);
+    vec3 clipPos5 = screenPos5 * 2.0 - 1.0;
+    vec4 tmp5 = gbufferProjectionInverse * vec4(clipPos5, 1.0);
+    vec3 viewPos5 = tmp5.xyz / tmp5.w;
+    vec3 eyePlayerPos5 = mat3(gbufferModelViewInverse) * viewPos5;
+    vec3 feetPlayerPos5 = eyePlayerPos5 + gbufferModelViewInverse[3].xyz;
+    vec3 worldPos5 = feetPlayerPos5 + cameraPosition;
+
     vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
     vec3 viewDir = normalize(lightDir - Vieww.xyz);
 
@@ -463,7 +472,7 @@ void main(){
 
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
-    vec3 LightmapColor = GetLightmapColor(Lightmap);
+    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos5);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
 
     bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
@@ -482,8 +491,8 @@ vec4 testLight = vec4(0.5, 0.25, 0.0, 1.0);//*vec4(skyColor, 1.0);
 vec4 testLight2 = vec4(0.75, 0.25, 0.25, 1.0);//*vec4(skyColor, 1.0);
 
 vec3 reflectDir = reflect(-lightDir, NormalWater);
-float spec = pow(max(dot(viewDir, reflectDir), 0.0), 512);
- specular = 1.5 * spec *Summertime3;
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1536);
+ specular = 3.5 * spec *Summertime3;
 }
 #endif
 //--------------------------------------------------------------------------------------------
@@ -503,13 +512,7 @@ vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
 
 vec3 ViewDirect = normalize(ViewSpace);
 
-vec3 screenPos5 = vec3(texcoord, texture2D(depthtex0, texcoord).r);
-vec3 clipPos5 = screenPos5 * 2.0 - 1.0;
-vec4 tmp5 = gbufferProjectionInverse * vec4(clipPos5, 1.0);
-vec3 viewPos5 = tmp5.xyz / tmp5.w;
-vec3 eyePlayerPos5 = mat3(gbufferModelViewInverse) * viewPos5;
-vec3 feetPlayerPos5 = eyePlayerPos5 + gbufferModelViewInverse[3].xyz;
-vec3 worldPos5 = feetPlayerPos5 + cameraPosition;
+
 
 vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 //--------------------------------------------------------------------------------------------
@@ -523,7 +526,7 @@ vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambien
 const float ambientOcclusionLevel = 1.0f;
 #endif
 //--------------------------------------------------------------------------------------------
-vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2;
+vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2.5;
 //--------------------------------------------------------------------------------------------
 vec4 reflection = vec4(1.0);
 vec4 reflection2 = vec4(1.0);
@@ -574,6 +577,7 @@ vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
     rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
 
 #endif
+
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+vec4(specular, 1.0)+rainpuddles;
