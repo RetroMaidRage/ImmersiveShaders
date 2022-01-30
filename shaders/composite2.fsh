@@ -45,7 +45,7 @@ const int colortex2Format = RGB16;
 #define CloudSpeedNoiseMove 6 //[1 2 3 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
 #define CloudSpeed 0.015 ///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 ]
 #define CloudGlobalMove
-#define CloudNoiseType noise //[fbm SimplexPerlin2D simplex2D]
+#define CloudNoiseType fbm //[noise SimplexPerlin2D simplex2D]
 #define Stars
 #define StarsAlways
 #define StarsNum 15	///[0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4 5 6 7 8 9 10 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 64 128 256 512 1024 ]
@@ -173,11 +173,9 @@ Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))
 #endif
 //----------------------------------------------------------------------------------------
 #ifdef Cloud
-if ((worldTime < 14000 || worldTime > 22000))
 
-  {
 color = color + Clouds;
-}
+
 #endif
 
 if (rainStrength == 1) {
