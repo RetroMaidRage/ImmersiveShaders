@@ -187,9 +187,6 @@ float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
     return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0)*ColorSettings, ShadowVisibility0);
 }
 //--------------------------------------------------------------------------------------------
-
-
-//--------------------------------------------------------------------------------------------
 vec3 GetShadow(float depth) {
 
     const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
@@ -222,6 +219,7 @@ vec3 GetShadow(float depth) {
     ShadowAccum /= TotalSamples;
     return ShadowAccum;
 }
+//--------------------------------------------------------------------------------------------
 vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse){
 
     Lightmap = AdjustLightmap(Lightmap);
@@ -243,7 +241,7 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
 
     float Depthh = texture2D(depthtex0, TexCoords).r;
 
-    vec3 shading = Default * Diffuse * GetShadow(Depthh);
+    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh);
          shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading;
          shading = TorchColor * Albedo * Lightmap.x + shading;
 
@@ -254,6 +252,7 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
 
     return LightmapLighting;
 }
+//--------------------------------------------------------------------------------------------
 vec3 GetLightmapColorOld(in vec2 Lightmap, vec3 worldpos){
 
     Lightmap = AdjustLightmap(Lightmap);
@@ -326,8 +325,7 @@ vec3 Water_Absorbtion(vec2 TexCoords)
 {
 
     vec3 WATER_FOG_COLOR = vec3(0.4, 0.07, 0.03);
-
-vec3 w2 = vec3(0.08);
+    vec3 w2 = vec3(0.08);
 
     float depth_solid = get_linear_depth(texture2D(depthtex0, TexCoords).x);
     float depth_translucent = get_linear_depth(texture2D(depthtex1, TexCoords).x);
@@ -388,7 +386,7 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
 
 
 #endif
-
+//--------------------------------------------------------------------------------------------
 vec4 raytraceGround(vec3 viewdir, vec3 normal){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
       vec4 color = vec4(0.0);
@@ -433,7 +431,7 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
     }
     return color;
 }}
-
+//--------------------------------------------------------------------------------------------
 float getRainPuddles(vec3 worldpos, vec3 Normal){
 
 	vec2 coord = (worldpos.xz/10000);
@@ -459,26 +457,39 @@ void main(){
         gl_FragData[0] = vec4(Albedo, 1.0f);
         return;
     }
-
-    vec3 ClipSpacee = vec3(TexCoords, Depth) * 2.0f - 1.0f;
-    vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
-    vec3 Vieww = ViewWw.xyz / ViewWw.w;
-
-    vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
-    vec3 clipPos = screenPos * 2.0 - 1.0;
-    vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
-    vec3 viewPos = tmp.xyz / tmp.w;
-    vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
-    vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
-    vec3 worldPos = feetPlayerPos + cameraPosition;
 //--------------------------------------------------------------------------------------------
-    vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
-    vec3 viewDir = normalize(lightDir - Vieww.xyz);
+vec3 ClipSpacee = vec3(TexCoords, Depth) * 2.0f - 1.0f;
+vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
+vec3 Vieww = ViewWw.xyz / ViewWw.w;
 //--------------------------------------------------------------------------------------------
-    vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
-    vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
-    bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
+vec3 clipPos = screenPos * 2.0 - 1.0;
+vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
+vec3 viewPos = tmp.xyz / tmp.w;
+vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
+vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
+vec3 worldPos = feetPlayerPos + cameraPosition;
 //--------------------------------------------------------------------------------------------
+vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
+vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
+vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
+vec3 viewPos1 = tmp1.xyz / tmp1.w;
+vec4 world_position = gbufferModelViewInverse * vec4(viewPos1, 1.0);
+vec3 ViewDir = normalize(viewPos1);
+vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
+//--------------------------------------------------------------------------------------------
+vec3 ClipSpace = vec3(TexCoords, texture2D(depthtex0, TexCoords).x) * 2.0f - 1.0f;
+vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
+vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
+vec3 ViewDirect = normalize(ViewSpace);
+//--------------------------------------------------------------------------------------------
+vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
+vec3 viewDir = normalize(lightDir - Vieww.xyz);
+//--------------------------------------------------------------------------------------------
+vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
+vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
+bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+//------------------------------DIFFUSE--------------------------------------------------------------
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
@@ -487,11 +498,16 @@ void main(){
     }
     //--------------------------------------------------------------------------------------------
     vec3 diffuse = Albedo * NdotL / 3.14;
-//--------------------------------------------------------------------------------------------
     vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos, Albedo, diffuse);
     vec3 LightmapColorOld = GetLightmapColorOld(Lightmap, worldPos);
     vec3 specular;
-//--------------------------------------------------------------------------------------------
+    //--------------------------------VANILLA_AO--------------------------------------------------
+    #ifdef VanillaAmbientOcclusion
+    const float ambientOcclusionLevel = 1.0f;
+    #endif
+//-------------------------------FRENSEL--------------------------------------------------------
+vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2.5;
+//--------------------------SPECULAR----------------------------------------------------
 if(isWater){
 
   vec3 testLight3 = fogColor*1.5;
@@ -506,36 +522,17 @@ vec3 reflectDir = reflect(-lightDir, NormalWater);
 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1536);
  specular = 3.5 * spec *Summertime3;
 }
-//--------------------------------------------------------------------------------------------
-vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
-vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
-vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
-vec3 viewPos1 = tmp1.xyz / tmp1.w;
-vec4 world_position = gbufferModelViewInverse * vec4(viewPos1, 1.0);
-vec3 ViewDir = normalize(viewPos1);
-vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
-//--------------------------------------------------------------------------------------------
-vec3 ClipSpace = vec3(TexCoords, texture2D(depthtex0, TexCoords).x) * 2.0f - 1.0f;
-vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
-vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
-vec3 ViewDirect = normalize(ViewSpace);
 
 //--------------------------------------------------------------------------------------------
 float ShadowOn = NdotL;
 float ShadowOff = 0.25;
-//--------------------------------------------------------------------------------------------
+//----------------------------------DIFFUS-------------------------------------------------
 #ifdef UseNewDiffuse
 vec3 Diffuse = LightmapColor;
 #else
 vec3 Diffuse = Albedo * (LightmapColorOld + GrassShadow * GetShadow(Depth) + Ambient);
 #endif
-//--------------------------------------------------------------------------------------------
-#ifdef VanillaAmbientOcclusion
-const float ambientOcclusionLevel = 1.0f;
-#endif
-//--------------------------------------------------------------------------------------------
-vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2.5;
-//--------------------------------------------------------------------------------------------
+//--------------------------------SCREEN SPACE REFLECTIONS------------------------------------------------------
 vec4 reflection = vec4(1.0);
 vec4 reflection2 = vec4(1.0);
 vec4 reflectionRain = vec4(1.0);
@@ -555,20 +552,20 @@ if(isWater){
      reflection2 = vec4(1.0);
  }
 #endif
-//--------------------------------------------------------------------------------------------
+//---------------------------------ABSORBTION----------------------------------------------
 #ifdef WaterAbsorption
 if(isWater){
 absorbtion.rgb *=Water_Absorbtion(TexCoords);
 }
 #endif
-//--------------------------------------------------------------------------------------------
+//----------------------------------VOLUMETRIC_FOG-------------------------------------------------
 #ifdef volumetric_Fog
 if ((worldTime < 14000 || worldTime > 22000)) {
 Diffuse += computeVL(ViewSpace)*VL_Strenght;
 }
 #endif
 
-//-----------------------------------------------------------------------------------------
+//----------------------------------RAIN_PUDDLE----------------------------------------------
 #ifdef RainPuddles
 
 float rainpuddleee = getRainPuddles(worldPos, Normal);
@@ -585,7 +582,7 @@ vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
     rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
 
 #endif
-//-----------------------------------------------------------------------------------------
+//----------------------------------WATER_WAVES------------------------------------------------
 float newnormalmultiply;
 vec3 posxz = worldPos;
 float deltaPos = 0.2;
@@ -619,7 +616,7 @@ if(isWater){
 
    newnormalmultiply = 0.005-dot(NormalWater,normalize(newnormal).xyz)*0.01;
 }
-//--------------------------------------------------------------------------------------------
+//----------------------------------OUTPUT----------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+(newnormalmultiply/5*texture2D(gcolor, TexCoords))+vec4(specular, 1.0)+rainpuddles;
 
