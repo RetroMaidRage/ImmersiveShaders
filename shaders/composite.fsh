@@ -6,7 +6,8 @@
 #include "/files/filters/distort2.glsl"
 #include "/files/filters/dither.glsl"
 #include "/files/filters/noises.glsl"
-
+#include "/files/water/water_height.glsl"
+#include "/files/shading/lightmap.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
@@ -82,11 +83,10 @@ const float ambientOcclusionLevel = 0.0f;
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
 
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
-#define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
 #define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
 #define ColorSettings Summertime //[Summertime Default Composition]
-
+//#define UseNewDiffuse
 #define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 
 #define VanillaAmbientOcclusion
@@ -95,7 +95,7 @@ const float ambientOcclusionLevel = 0.0f;
 
 #define volumetric_Fog
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
-#define VL_Strenght 0.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_Strenght 0.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define VL_UseJitter NoJitter //[jitter]
 #define VL_Color  DynamicVolumetricColor //[StaticVolumetricColor]
 
@@ -151,51 +151,9 @@ float cdist(vec2 coord) {
 	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
 }
 //--------------------------------------------------------------------------------------------
-    float get_linear_depth(in float depth)
-    {
-        return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
-    }
-//--------------------------------------------------------------------------------------------
-    float lD(in float d, in float zNear, in float zFar) {
-    float zN = 2.0 * d - 1.0;
-
-    return 2.0 * zNear * zFar / (zFar + zNear - zN * (zFar - zNear));
-}
-
-//--------------------------------------------------------------------------------------------
-float AdjustLightmapTorch(in float torch) {
-
-       float K =LIGHT_STRENGHT;
-       float P = 8.06f;
-        return K * pow(torch, P);
-}
-//--------------------------------------------------------------------------------------------
-float AdjustLightmapSky(in float sky){
-    float sky_2 = sky * sky;
-    return sky * sky_2;
-}
-//--------------------------------------------------------------------------------------------
-vec2 AdjustLightmap(in vec2 Lightmap){
-    vec2 NewLightMap;
-    NewLightMap.x = AdjustLightmapTorch(Lightmap.x);
-    NewLightMap.y = AdjustLightmapSky(Lightmap.y);
-    return NewLightMap;
-}
-//--------------------------------------------------------------------------------------------
-vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos){
-
-    Lightmap = AdjustLightmap(Lightmap);
-
-    const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
-
-    vec4 tcolo = texture2D(noisetex, worldpos.xz/2222);
-
-    vec3 TorchLighting = Lightmap.x * TorchColor;
-    vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
-
-    vec3 LightmapLighting = TorchLighting + SkyLighting;
-
-    return LightmapLighting;
+float get_linear_depth(in float depth)
+{
+      return 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
 }
 //--------------------------------------------------------------------------------------------
 float Visibility(in sampler2D ShadowMap, in vec3 SampleCoords) {
@@ -230,10 +188,13 @@ float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
 }
 //--------------------------------------------------------------------------------------------
 
-const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
-const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
+
 //--------------------------------------------------------------------------------------------
 vec3 GetShadow(float depth) {
+
+    const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
+    const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
+
     vec3 ClipSpace = vec3(TexCoords, depth) * 2.0f - 1.0f;
     vec4 ViewW = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
     vec3 View = ViewW.xyz / ViewW.w;
@@ -260,6 +221,53 @@ vec3 GetShadow(float depth) {
     }
     ShadowAccum /= TotalSamples;
     return ShadowAccum;
+}
+vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse){
+
+    Lightmap = AdjustLightmap(Lightmap);
+
+
+    vec3 NfogColor = fogColor*1.5;
+
+    vec3 Summertime =  NfogColor;
+    Summertime.r = NfogColor.r*2;
+
+    vec3 Default = fogColor*1.5;
+    Default.r +=0.5;
+
+    vec3 Composition = NfogColor*1.5;
+    Composition.r +=2.8;
+    Composition.b +=1.2;
+
+    const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
+
+    float Depthh = texture2D(depthtex0, TexCoords).r;
+
+    vec3 shading = Default * Diffuse * GetShadow(Depthh);
+         shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading;
+         shading = TorchColor * Albedo * Lightmap.x + shading;
+
+    vec3 TorchLighting = Lightmap.x * TorchColor;
+    vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
+
+    vec3 LightmapLighting = shading;
+
+    return LightmapLighting;
+}
+vec3 GetLightmapColorOld(in vec2 Lightmap, vec3 worldpos){
+
+    Lightmap = AdjustLightmap(Lightmap);
+
+    const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
+
+    vec4 tcolo = texture2D(noisetex, worldpos.xz/2222);
+
+    vec3 TorchLighting = Lightmap.x * TorchColor;
+    vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
+
+    vec3 LightmapLighting = TorchLighting + SkyLighting;
+
+    return LightmapLighting;
 }
 //--------------------------------------------------------------------------------------------
 #ifdef volumetric_Fog
@@ -387,7 +395,7 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
     if(isHand){
      color = vec4(0.0);
   }else{
-    vec4 watercolor_buffer = texture2D(colortex6, texcoord);
+
 
     vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
     vec3 vector = stp * rvector;
@@ -456,30 +464,34 @@ void main(){
     vec4 ViewWw = gbufferProjectionInverse * vec4(ClipSpacee, 1.0f);
     vec3 Vieww = ViewWw.xyz / ViewWw.w;
 
-    vec3 screenPos5 = vec3(texcoord, texture2D(depthtex0, texcoord).r);
-    vec3 clipPos5 = screenPos5 * 2.0 - 1.0;
-    vec4 tmp5 = gbufferProjectionInverse * vec4(clipPos5, 1.0);
-    vec3 viewPos5 = tmp5.xyz / tmp5.w;
-    vec3 eyePlayerPos5 = mat3(gbufferModelViewInverse) * viewPos5;
-    vec3 feetPlayerPos5 = eyePlayerPos5 + gbufferModelViewInverse[3].xyz;
-    vec3 worldPos5 = feetPlayerPos5 + cameraPosition;
-
+    vec3 screenPos = vec3(texcoord, texture2D(depthtex0, texcoord).r);
+    vec3 clipPos = screenPos * 2.0 - 1.0;
+    vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
+    vec3 viewPos = tmp.xyz / tmp.w;
+    vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
+    vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
+    vec3 worldPos = feetPlayerPos + cameraPosition;
+//--------------------------------------------------------------------------------------------
     vec3 lightDir = normalize(shadowLightPosition + Vieww.xyz);
     vec3 viewDir = normalize(lightDir - Vieww.xyz);
-
+//--------------------------------------------------------------------------------------------
     vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
     vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
-
+    bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+//--------------------------------------------------------------------------------------------
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
 
-    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos5);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
-
-    bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+    if (isWater){
+      NdotL = max(dot(NormalWater, normalize(shadowLightPosition)), 0.0f);
+    }
+    //--------------------------------------------------------------------------------------------
+    vec3 diffuse = Albedo * NdotL / 3.14;
+//--------------------------------------------------------------------------------------------
+    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos, Albedo, diffuse);
+    vec3 LightmapColorOld = GetLightmapColorOld(Lightmap, worldPos);
     vec3 specular;
 //--------------------------------------------------------------------------------------------
-#ifdef specularLight
-
 if(isWater){
 
   vec3 testLight3 = fogColor*1.5;
@@ -494,7 +506,6 @@ vec3 reflectDir = reflect(-lightDir, NormalWater);
 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1536);
  specular = 3.5 * spec *Summertime3;
 }
-#endif
 //--------------------------------------------------------------------------------------------
 vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
 vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
@@ -502,25 +513,22 @@ vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
 vec3 viewPos1 = tmp1.xyz / tmp1.w;
 vec4 world_position = gbufferModelViewInverse * vec4(viewPos1, 1.0);
 vec3 ViewDir = normalize(viewPos1);
-
+vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 //--------------------------------------------------------------------------------------------
 vec3 ClipSpace = vec3(TexCoords, texture2D(depthtex0, TexCoords).x) * 2.0f - 1.0f;
-
 vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
-
 vec3 ViewSpace = ClipSpaceToViewSpace.xyz / ClipSpaceToViewSpace.w;
-
 vec3 ViewDirect = normalize(ViewSpace);
 
-
-
-vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
 //--------------------------------------------------------------------------------------------
 float ShadowOn = NdotL;
 float ShadowOff = 0.25;
 //--------------------------------------------------------------------------------------------
-vec3 Diffuse = Albedo * (LightmapColor + GrassShadow * GetShadow(Depth) + Ambient);
-
+#ifdef UseNewDiffuse
+vec3 Diffuse = LightmapColor;
+#else
+vec3 Diffuse = Albedo * (LightmapColorOld + GrassShadow * GetShadow(Depth) + Ambient);
+#endif
 //--------------------------------------------------------------------------------------------
 #ifdef VanillaAmbientOcclusion
 const float ambientOcclusionLevel = 1.0f;
@@ -563,7 +571,7 @@ Diffuse += computeVL(ViewSpace)*VL_Strenght;
 //-----------------------------------------------------------------------------------------
 #ifdef RainPuddles
 
-float rainpuddleee = getRainPuddles(worldPos5, Normal);
+float rainpuddleee = getRainPuddles(worldPos, Normal);
 vec4 reflectionpuddle = raytraceGround(ViewDirect, Normal);
 reflectionpuddle.rgb*=fresnel(rd, SSR_WaterNormals);
 vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
@@ -577,9 +585,42 @@ vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
     rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
 
 #endif
+//-----------------------------------------------------------------------------------------
+float newnormalmultiply;
+vec3 posxz = worldPos;
+float deltaPos = 0.2;
+float h0;
+float h1;
+float h2;
+float h3;
+float h4;
+float xDelta;
+float yDelta;
+vec3 newnormal;
+//-----------------------------------------------------------------------------------------
+if(isWater){
 
+  posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
+  posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
+
+
+
+   h0 = waterH(posxz, frameTimeCounter);
+   h1 = waterH(posxz + vec3(deltaPos,0.0,0.0),frameTimeCounter);
+   h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0),frameTimeCounter);
+   h3 = waterH(posxz + vec3(0.0,0.0,deltaPos),frameTimeCounter);
+   h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos),frameTimeCounter);
+
+   xDelta = ((h1-h0)+(h0-h2))/deltaPos;
+   yDelta = ((h3-h0)+(h0-h4))/deltaPos;
+
+       newnormal = normalize(vec3(xDelta,yDelta,1.0-xDelta*xDelta-yDelta*yDelta));
+
+
+   newnormalmultiply = 0.005-dot(NormalWater,normalize(newnormal).xyz)*0.01;
+}
 //--------------------------------------------------------------------------------------------
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+vec4(specular, 1.0)+rainpuddles;
+    gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+(newnormalmultiply/5*texture2D(gcolor, TexCoords))+vec4(specular, 1.0)+rainpuddles;
 
 }

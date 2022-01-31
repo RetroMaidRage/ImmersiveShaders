@@ -87,7 +87,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 										//		vpos.y += wave;
 										#ifdef WaveMultiplyVertex
 										newnormal2.y *= 2;
-													vpos.xyz += newnormal2;
+													vpos.xz += newnormal2.xz;
 													#endif
 														//			vpos.xyz += newnormal3;
 

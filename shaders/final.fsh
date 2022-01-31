@@ -181,34 +181,7 @@ vec2 RainDropCalc(vec2 p) {
 }
 #endif
 //------------------------------------------------------------------------------------------------------------------
-#ifdef LensFlare
-vec4 lensFlare(in vec2 coord)
-{
-  //https://www.shadertoy.com/view/ls3czM
-  int uGhosts = 5; // number of ghost samples
-float uGhostDispersal = 0.6; // dispersion facto
-      vec2 texcoordd = -coord + vec2(1.0);
-      vec2 texelSize = vec2(1. / viewWidth, 1. / viewHeight);
 
-   // ghost vector to image centre:
-      vec2 ghostVec = (vec2(0.5) - texcoordd) * uGhostDispersal;
-
-   // sample ghosts:
-      vec4 result = vec4(0.0);
-      for (int i = 0; i < uGhosts; ++i) {
-         vec2 offset = fract(texcoordd + ghostVec * float(i));
-
-         float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
-         weight = pow(1.0 - weight, 10.0);
-
-vec4 lensflarealbedo = texture(colortex0, offset);
-
-         result += lensflarealbedo * weight; //need noise+blur
-      }
-
-    return result;
-}
-#endif
 
 #ifdef UnderWater
 vec2 UnderWaterScreen(vec2 uv){
@@ -254,9 +227,7 @@ vec3 lOff(){
 }
 
 //--------------------------------------------MAIN------------------------------------------------------
-float H2 (in vec2 st) {
-    return fract(sin(dot(st,vec2(12.9898,8.233))) * 43758.5453123);
-}
+
 
 
 #ifdef LensFlare
@@ -269,7 +240,7 @@ vec3 lensflarer(vec2 uv,vec2 pos)
 	float dist=length(main); dist = pow(dist,.1);
 
 
-	float f0 = 1.0/(length(uv-pos)*16.0+1.0);
+
 
 
 
@@ -298,7 +269,7 @@ vec3 lensflarer(vec2 uv,vec2 pos)
 	vec3 c = vec3(.0);
 
 	c.r+=f2+f4+f5+f6; c.g+=f22+f42+f52+f62; c.b+=f23+f43+f53+f63;
-	c+=vec3(f0);
+
 
 	return c;
 }
@@ -324,7 +295,14 @@ vec2 LightPos = tpos.xy/tpos.z;
   vec4 tmp = gbufferProjectionInverse * vec4(clipPos, 1.0);
   vec3 viewPos = tmp.xyz / tmp.w;
   vec4 world_position = gbufferModelViewInverse * vec4(viewPos, 1.0);
+  vec2 uvv = gl_FragCoord.xy / GetSreenRes.xy - 0.5;
+  uvv.x *= GetSreenRes.x/GetSreenRes.y; //fix aspect ratio
 
+#ifdef LensFlare
+        if ((worldTime < 14000 || worldTime > 22000) && sunPosition.z < 0){
+  color.rgb+=lensflarer(uvv,LightPos)/5;
+  }
+#endif
 //---------------------------------------------FUNCTIONS------------------------------------------------
 #ifdef FXAA
 color = ApplyFXAA(colortex0,texSize, uv);
@@ -612,15 +590,6 @@ vec4 BackColor = vec4(0.0);
 color +=BackColor;
 #endif
 //------------------------------------------------------------------------------------------------------------------
-#ifdef LensFlare
-
- if (isEyeInWater > 0.9) {
-
- 	} else {
- color += lensFlare(uv) * 1.0;
-}
-#endif
-//------------------------------------------------------------------------------------------------------------------
 #ifdef RainDesaturation
 float Fac = 0.0;
 if (rainStrength == 1){
@@ -649,10 +618,6 @@ color /= 2.5;
 }
 #endif
 
-vec2 uvv = gl_FragCoord.xy / GetSreenRes.xy - 0.5;
-uvv.x *= GetSreenRes.x/GetSreenRes.y; //fix aspect ratio
-vec4 ccccc = texture2D(colortex0, texcoord.st);
-//color.rgb+=lensflarer(uvv,LightPos);
 
 gl_FragColor = color;
 

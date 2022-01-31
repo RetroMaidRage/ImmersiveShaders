@@ -1,6 +1,7 @@
 #version 120
 #include "/files/filters/noises.glsl"
 #include "/files/filters/blur.glsl"
+#include "/files/water/water_height.glsl"
 //--------------------------------------------UNIFORMS------------------------------------------
 varying vec4 texcoord;
 uniform sampler2D gcolor;
@@ -88,52 +89,6 @@ float rainx = clamp(rainStrength, 0.0f, 1.0f)/1.0f;
 vec2 dx = dFdx(texcoord.xy);
 vec2 dy = dFdy(texcoord.xy);
 
-
-//---------------------------------------------------------------------------------------------------------------------------
-
-float waterH(vec3 posxz) {
-
-float wave = 10.0;
-
-
-float factor = 2.0;
-float amplitude = 0.2;
-float speed = 4.0;
-float size = 0.2;
-
-float px = posxz.x/50.0 + 250.0;
-float py = posxz.z/50.0  + 250.0;
-
-float fpx = abs(fract(px*20.0)-0.5)*2.0;
-float fpy = abs(fract(py*20.0)-0.5)*2.0;
-
-float d = length(vec2(fpx,fpy));
-
-for (int i = 1; i < 4; i++) {
-	wave -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
-	factor /= 2;
-}
-
-factor = 1.0;
-px = -posxz.x/50.0 + 250.0;
-py = -posxz.z/150.0 - 250.0;
-
-fpx = abs(fract(px*20.0)-0.5)*2.0;
-fpy = abs(fract(py*20.0)-0.5)*2.0;
-
-d = length(vec2(fpx,fpy));
-float wave2 = 0.0;
-for (int i = 1; i < 4; i++) {
-	wave2 -= d*factor*cos( (1/factor)*px*py*size + 1.0*frameTimeCounter*speed);
-	factor /= 2;
-}
-
-return amplitude*wave2+amplitude*wave;
-}
-
-
-
-
 //---------------------------------------------------------------------------------------------------------------------------
 void main() {
 	int id = int(entityId + 0.5);
@@ -150,7 +105,7 @@ vec4 Custom = vec4(1.0);
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
 	  cwater.b = (cwater.b*0.6);
-	cwater.rgb = cwater.rgb / (cwater.rgb + 2.52) * (1.0+2.0);
+	cwater.rgb = cwater.rgb / (cwater.rgb + 3.52) * (1.0+2.0);
 
 //--------------------------------------------------------------------------------------
 float fog = length(viewPos.xz)/5;
@@ -173,11 +128,11 @@ posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
 
 
 float deltaPos = 0.2;
-float h0 = waterH(posxz);
-float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0));
-float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0));
-float h3 = waterH(posxz + vec3(0.0,0.0,deltaPos));
-float h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos));
+float h0 = waterH(posxz, frameTimeCounter);
+float h1 = waterH(posxz + vec3(deltaPos,0.0,0.0),frameTimeCounter);
+float h2 = waterH(posxz + vec3(-deltaPos,0.0,0.0),frameTimeCounter);
+float h3 = waterH(posxz + vec3(0.0,0.0,deltaPos),frameTimeCounter);
+float h4 = waterH(posxz + vec3(0.0,0.0,-deltaPos),frameTimeCounter);
 
 float xDelta = ((h1-h0)+(h0-h2))/deltaPos;
 float yDelta = ((h3-h0)+(h0-h4))/deltaPos;
