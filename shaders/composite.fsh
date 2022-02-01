@@ -220,7 +220,7 @@ vec3 GetShadow(float depth) {
     return ShadowAccum;
 }
 //--------------------------------------------------------------------------------------------
-vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse){
+vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse, vec3 frcolor){
 
     Lightmap = AdjustLightmap(Lightmap);
 
@@ -241,16 +241,11 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
 
     float Depthh = texture2D(depthtex0, TexCoords).r;
 
-    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh);
-         shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading;
+    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh)*3;
+         shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading*2*frcolor;
          shading = TorchColor * Albedo * Lightmap.x + shading;
 
-    vec3 TorchLighting = Lightmap.x * TorchColor;
-    vec3 SkyLighting = Lightmap.y * DynamicSkyColor2 * SkyLightingStrenght;
-
-    vec3 LightmapLighting = shading;
-
-    return LightmapLighting;
+    return shading;
 }
 //--------------------------------------------------------------------------------------------
 vec3 GetLightmapColorOld(in vec2 Lightmap, vec3 worldpos){
@@ -491,14 +486,14 @@ vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
 bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 //------------------------------DIFFUSE--------------------------------------------------------------
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
-
+vec3 frenselcolorNormal = fresnel(rd, Normal);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
     if (isWater){
       NdotL = max(dot(NormalWater, normalize(shadowLightPosition)), 0.0f);
     }
     //--------------------------------------------------------------------------------------------
     vec3 diffuse = Albedo * NdotL / 3.14;
-    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos, Albedo, diffuse);
+    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos, Albedo, diffuse, frenselcolorNormal);
     vec3 LightmapColorOld = GetLightmapColorOld(Lightmap, worldPos);
     vec3 specular;
     //--------------------------------VANILLA_AO--------------------------------------------------
