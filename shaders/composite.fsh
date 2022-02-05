@@ -167,7 +167,7 @@ vec3 TransparentShadow(in vec3 SampleCoords){
 vec3 NfogColor = fogColor*1.5;
 
 vec3 Summertime =  NfogColor;
-Summertime.r = NfogColor.r*2;
+Summertime.r = NfogColor.r*1.5;
 
 vec3 Default = fogColor*1.5;
 Default.r +=0.5;
@@ -219,6 +219,7 @@ vec3 GetShadow(float depth) {
     ShadowAccum /= TotalSamples;
     return ShadowAccum;
 }
+
 //--------------------------------------------------------------------------------------------
 vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse, vec3 frcolor){
 
@@ -241,7 +242,7 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
 
     float Depthh = texture2D(depthtex0, TexCoords).r;
 
-    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh)*3;
+    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh);
          shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading*2*frcolor;
          shading = TorchColor * Albedo * Lightmap.x + shading;
 
@@ -443,6 +444,7 @@ float getRainPuddles(vec3 worldpos, vec3 Normal){
 
 	return strength;
 }
+
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
@@ -486,7 +488,7 @@ vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
 bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 //------------------------------DIFFUSE--------------------------------------------------------------
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
-vec3 frenselcolorNormal = fresnel(rd, Normal);
+    vec3 frenselcolorNormal = fresnel(rd, Normal);
     float NdotL = max(dot(Normal, normalize(shadowLightPosition)), 0.0f);
     if (isWater){
       NdotL = max(dot(NormalWater, normalize(shadowLightPosition)), 0.0f);
@@ -523,7 +525,7 @@ float ShadowOn = NdotL;
 float ShadowOff = 0.25;
 //----------------------------------DIFFUS-------------------------------------------------
 #ifdef UseNewDiffuse
-vec3 Diffuse = LightmapColor;
+vec3 Diffuse =  LightmapColor;
 #else
 vec3 Diffuse = Albedo * (LightmapColorOld + GrassShadow * GetShadow(Depth) + Ambient);
 #endif
@@ -568,14 +570,16 @@ vec4 reflectionpuddle = raytraceGround(ViewDirect, Normal);
 reflectionpuddle.rgb*=fresnel(rd, SSR_WaterNormals);
 vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
+if(isWater){
 
+}else{
  reflectionRain = raytraceGround(ViewDirect, Normal);
  reflectionRain.rgb * fresnel(rd, Normal);
  reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,frenselcolor*reflectionRain.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
 
    rainPuddles +=rainpuddleee*reflection2Rain;
     rainpuddles = mix(rainPuddles,rainPuddles2, rainpuddleee)*reflection2Rain;
-
+}
 #endif
 //----------------------------------WATER_WAVES------------------------------------------------
 float newnormalmultiply;

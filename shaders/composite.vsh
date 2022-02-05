@@ -6,10 +6,11 @@ attribute vec4 mc_Entity;
 out vec2 textureCoordinates;
 out float entityId;
 varying vec3 SkyPos;
+  vec4   vertexpos;
 void main() {
   entityId = mc_Entity.x;
   	int blockId = int(entityId);
-    vec4   vertexpos = gl_Vertex;
+       vertexpos = gl_Vertex;
    gl_Position = ftransform();
   vec4 fPosition = normalize(gl_Position);
    TexCoords = gl_MultiTexCoord0.st;
