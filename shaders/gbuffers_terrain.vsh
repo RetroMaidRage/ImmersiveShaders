@@ -50,7 +50,8 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 								vpos.z += sin(pow(tick, 1.0))*magnitude;
 																vpos.x += sin(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time))*magnitude;
 																vpos.z += cos(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time)/50)*magnitude;
-															//			vpos.y += sin(pow(tick, 1.0)+(vworldpos.x + 1.0+Time)+(vworldpos.z + 1.0+Time)+(vworldpos.y + 11.0+Time)/5)*(magnitude/2);
+																vpos.x += sin(pow(tick, 1.0)+(sin(vworldpos.x) + sin(2.0+Time))+(sin(vworldpos.z) + cos(3.0+Time))+(vworldpos.y + 11.0+Time))*magnitude;
+																vpos.z += cos(pow(tick, 1.0)+(cos(vworldpos.x) + cos(8.0+Time))+(cos(vworldpos.z) + sin(5.0+Time))+(vworldpos.y + 11.0+Time))*magnitude;
     }
 
     if (mc_Entity.x == 10007.0) {

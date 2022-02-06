@@ -1,4 +1,5 @@
 #version 120
+
 #include "/files/filters/noises.glsl"
 #include "/files/filters/blur.glsl"
 #include "/files/water/water_height.glsl"
@@ -101,7 +102,7 @@ vec4 fresnelColor =  FrenselTexture;
 vec4 Texture = color;
 vec4 Custom = vec4(1.0);
 
-	vec4 cwater = WaterTransparent*glcolor*WaterType;
+	vec4 cwater = 1*glcolor*WaterType;
 	cwater.r = (cwater.r*1);
 	  cwater.g = (cwater.g*1);
 	  cwater.b = (cwater.b*0.6);
@@ -209,10 +210,10 @@ vec3 Chill = Normal;
 //---------------------------------------------------------------------------------------------------------------------------
 vec4 w = vec4(0.1, 0.2, 0.3, 0.27);
 vec4 w2 = vec4(0.8);
-
+cwater.rgb += 0.05,0.05,0.05;
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
-
+outputWater.a = WaterTransparent;
 /* DRAWBUFFERS:0576 */
 //0 - цвет, 5 - нормали, 7 - нахождение воды, 6 - цвет
 if (id == 10006) {
