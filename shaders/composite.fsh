@@ -113,6 +113,8 @@ const float ambientOcclusionLevel = 0.0f;
 //#define PuddlesAlways
 #define PuddlesDestiny 1.7 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define PuddlesStrenght 10 //[1 2 3 4 5 6 7 8 9 10 11 1213 14 15 16 17 18 19 20 21 22 23 24 25]
+#define MAX_RADIUS 2
+#define DOUBLE_HASH 1
 //--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -387,6 +389,7 @@ vec4 raytrace(vec3 viewdir, vec3 normal){
 
 #endif
 //--------------------------------------------------------------------------------------------
+#ifdef RainPuddles
 vec4 raytraceGround(vec3 viewdir, vec3 normal){
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
       vec4 color = vec4(0.0);
@@ -395,7 +398,7 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
   }else{
 
 
-    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)));
+    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)*dot(normal,normalize(upPosition))));
     vec3 vector = stp * rvector;
     vec3 oldpos = viewdir;
     viewdir += vector;
@@ -431,7 +434,9 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
     }
     return color;
 }}
+#endif
 //--------------------------------------------------------------------------------------------
+#ifdef RainPuddles
 float getRainPuddles(vec3 worldpos, vec3 Normal){
 
 	vec2 coord = (worldpos.xz/10000);
@@ -445,7 +450,7 @@ float getRainPuddles(vec3 worldpos, vec3 Normal){
 
 	return strength;
 }
-
+#endif
 //--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
@@ -594,6 +599,7 @@ if(isWater){
    newnormalmultiplyWater = 0.005-dot(NormalWater,normalize(newnormal).xyz)*0.01;
 }else{
   //-----------------------------------------------------------------------------------------
+  #ifdef RainPuddles
   deltaPos = 0.2;
 
   posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
@@ -614,6 +620,7 @@ if(isWater){
 
 
    newnormalmultiply = 0.005-dot(Normal,normalize(newnormal).xyz)*0.0025;
+   #endif
  }
 //----------------------------------VOLUMETRIC_FOG-------------------------------------------------
 #ifdef volumetric_Fog
@@ -633,7 +640,41 @@ vec3 lightDirection = normalize(shadowLightPosition);
        float NH = max(dot(Normal, H), 0.0);
 //---------------------------------------------------------------------------------------
 #ifdef RainPuddles
+//from https://www.shadertoy.com/view/lsyfWd
 
+    vec2 p0 = floor(worldPos.xz);
+
+    vec2 circles = vec2(0.);
+    for (int j = -MAX_RADIUS; j <= MAX_RADIUS; ++j)
+    {
+        for (int i = -MAX_RADIUS; i <= MAX_RADIUS; ++i)
+        {
+			vec2 pi = p0 + vec2(i, j);
+            #if DOUBLE_HASH
+            vec2 hsh = hash22(pi);
+            #else
+            vec2 hsh = pi;
+            #endif
+            vec2 p = pi + hash22(hsh);
+
+            float t = fract(0.3*frameTimeCounter + hash12(hsh));
+            vec2 v = p - worldPos.xz;
+            float d = length(v) - (float(MAX_RADIUS) + 1.)*t;
+
+            float h = 1e-3;
+            float d1 = d - h;
+            float d2 = d + h;
+            float p1 = sin(31.*d1) * smoothstep(-0.6, -0.3, d1) * smoothstep(0., -0.3, d1);
+            float p2 = sin(31.*d2) * smoothstep(-0.6, -0.3, d2) * smoothstep(0., -0.3, d2);
+            circles += 0.5 * normalize(v) * ((p2 - p1) / (2. * h) * (1. - t) * (1. - t));
+        }
+    }
+    circles /= float((MAX_RADIUS*2+1)*(MAX_RADIUS*2+1));
+
+    float intensity = 1;
+    vec3 n = vec3(circles, sqrt(1. - dot(circles, circles)));
+    vec3 colorRipple = texture2D(gcolor, TexCoords - intensity*n.xy).rgb + 5.*pow(clamp(dot(n, normalize(vec3(1., 0.7, 0.5))), 0., 1.), 6.);
+//------------------------------------------------------------------------------------
 float rainpuddleee = getRainPuddles(worldPos, Normal);
 vec4 rainPuddles = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 rainPuddles2 = vec4(0.0, 0.0, 0.0, 1.0);
@@ -643,7 +684,7 @@ if(isWater){
 }else{
  reflectionRain = raytraceGround(ViewDirect, Normal+newnormalmultiply*dot(Normal,normalize(upPosition)));
  reflectionRain.rgb * fresnel(rd, Normal);
- reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,frenselcolor*reflectionRain.a * (vec3(1.0) - texture2D(gcolor, TexCoords).rgb));
+ reflection2Rain.rgb = mix(texture2D(gcolor, TexCoords).rgb, reflectionRain.rgb,frenselcolor*reflectionRain.a * (vec3(1.0) - colorRipple*dot(Normal,normalize(upPosition))));
 
  rainPuddles +=rainpuddleee*reflection2Rain;
    //---------------------------------------------------------------------------------------
