@@ -5,6 +5,10 @@ float interleavedGradientNoise() {
 float rand(float n)
 {return fract(sin(n) * 43758.5453123);}
 
+float randvec2(vec2 uv){
+ return fract(sin(dot(uv, vec2(12.9898,78.233)))*43578.5453);
+}
+
 float noisee(float p){
 	float fl = floor(p);
   float fc = fract(p);

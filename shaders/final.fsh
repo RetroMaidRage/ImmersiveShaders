@@ -133,7 +133,7 @@ const int colortex2Format = RGB16;
 
 //------------------------------------------------------------------------------------------------------------------
    void VignetteColor(inout vec3 color) {
-   float dist = distance(texcoord.st, vec2(0.5)) * 2.0;
+   float dist = distance(texcoord.st, vec2(0.5)) * 2.0;  //+(fract(0.05*frameTimeCounter)*fract(-0.05*frameTimeCounter));
    dist /= Vignette_Distance;
 
    dist = pow(dist, Vignette_Radius);
@@ -389,6 +389,10 @@ color.r = texture(colortex0, uv - ChromaOffset/1.8).r;
         BlurGaussianQuallity += kernel[kSize+j]*kernel[kSize+i]*texture(colortex0, (gl_FragCoord.xy+vec2(float(i),float(j))) / GetSreenRes).rgb;
 
       }}
+
+
+
+
 //------------------------------------------------------------------------------------------------------------------
 #ifdef RadialBlur
 const int nsamples = 10;
@@ -616,8 +620,22 @@ color += texture2D(colortex0, uv);
 color /= 2.5;
 }
 #endif
+vec3 TL = texture(colortex0, uv + vec2(-1, 1)/ GetSreenRes).rgb;
+vec3 TM = texture(colortex0, uv + vec2(0, 1)/ GetSreenRes).rgb;
+vec3 TR = texture(colortex0, uv + vec2(1, 1)/ GetSreenRes).rgb;
+
+vec3 ML = texture(colortex0, uv + vec2(-1, 0)/ GetSreenRes).rgb;
+vec3 MR = texture(colortex0, uv + vec2(1, 0)/ GetSreenRes).rgb;
+
+vec3 BL = texture(colortex0, uv + vec2(-1, -1)/ GetSreenRes).rgb;
+vec3 BM = texture(colortex0, uv + vec2(0, -1)/ GetSreenRes).rgb;
+vec3 BR = texture(colortex0, uv + vec2(1, -1)/ GetSreenRes).rgb;
+
+vec3 GradX = -TL + TR - 2.0 * ML + 2.0 * MR - BL + BR;
+vec3 GradY = TL + 2.0 * TM + TR - BL - 2.0 * BM - BR;
 
 
 gl_FragColor = color;
+
 
 }

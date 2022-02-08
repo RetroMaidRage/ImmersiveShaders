@@ -150,6 +150,9 @@ const float ref = 0.1;			//refinement multiplier
 const float inc = 2.2;			//increasement factor at each step
 const int maxf = 4;				//number of refinements
 //--------------------------------------------------------------------------------------------
+const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
+const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
+//--------------------------------------------------------------------------------------------
 vec3 nvec3(vec4 pos){
     return pos.xyz/pos.w;
 }
@@ -198,17 +201,9 @@ float ShadowVisibility3 = ShadowVisibility1 * ColShadowBoost;
     return mix(ShadowVisibility3 * TransmittedColor, vec3(1.0)*ColorSettings, ShadowVisibility0);
 }
 //--------------------------------------------------------------------------------------------
-vec3 GetShadow(float depth) {
+vec3 GetShadow(vec4 worldpos) {
 
-    const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
-    const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
-
-    vec3 ClipSpace = vec3(TexCoords, depth) * 2.0f - 1.0f;
-    vec4 ViewW = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
-    vec3 View = ViewW.xyz / ViewW.w;
-    vec4 World = gbufferModelViewInverse * vec4(View, 1.0f);
-
-    vec4 ShadowSpace = shadowProjection * shadowModelView * World;
+    vec4 ShadowSpace = shadowProjection * shadowModelView * worldpos;
     ShadowSpace.xy = DistortPosition(ShadowSpace.xy);
     vec3 SampleCoords = ShadowSpace.xyz * 0.5f + 0.5f;
 
@@ -253,7 +248,7 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
 
     float Depthh = texture2D(depthtex0, TexCoords).r;
 
-    vec3 shading = vec3(1) * Diffuse * GetShadow(Depthh);
+    vec3 shading = vec3(1) * Diffuse * 1;
          shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading*2*frcolor;
          shading = TorchColor * Albedo * Lightmap.x + shading;
 
@@ -316,7 +311,7 @@ vec3 computeVL(vec3 viewPos) {
         float extinction = 1.0 - exp(-dist * 1);
         color += (mix(transmittedColor * shadowVisibility1, VL_Color, shadowVisibility0) + shadowVisibility0) * extinction*fogColor;
 
-      //  color *= colorVL;
+
     }
     return color * INV_SAMPLES;
 }
@@ -482,13 +477,8 @@ vec3 eyePlayerPos = mat3(gbufferModelViewInverse) * viewPos;
 vec3 feetPlayerPos = eyePlayerPos + gbufferModelViewInverse[3].xyz;
 vec3 worldPos = feetPlayerPos + cameraPosition;
 //--------------------------------------------------------------------------------------------
-vec3 screenPos1 = vec3(texcoord, texture2D(depthtex, texcoord).r);
-vec3 clipPos1 = screenPos1 * 2.0 - 1.0;
-vec4 tmp1 = gbufferProjectionInverse * vec4(clipPos1, 1.0);
-vec3 viewPos1 = tmp1.xyz / tmp1.w;
-vec4 world_position = gbufferModelViewInverse * vec4(viewPos1, 1.0);
-vec3 ViewDir = normalize(viewPos1);
-vec3 rd = normalize(vec3(world_position.x,world_position.y,world_position.z));
+vec4 World = gbufferModelViewInverse * vec4(Vieww, 1.0f);
+vec3 rd = normalize(vec3(World.x,World.y,World.z));
 //--------------------------------------------------------------------------------------------
 vec3 ClipSpace = vec3(TexCoords, texture2D(depthtex0, TexCoords).x) * 2.0f - 1.0f;
 vec4 ClipSpaceToViewSpace = gbufferProjectionInverse * vec4(ClipSpace, 1.0f);
@@ -541,7 +531,7 @@ float ShadowOff = 0.25;
 #ifdef UseNewDiffuse
 vec3 Diffuse =  LightmapColor;
 #else
-vec3 Diffuse = Albedo * (LightmapColorOld + GrassShadow * GetShadow(Depth) + Ambient);
+vec3 Diffuse = Albedo * (LightmapColorOld + GrassShadow * GetShadow(World) + Ambient);
 #endif
 //--------------------------------SCREEN SPACE REFLECTIONS------------------------------------------------------
 vec4 reflection = vec4(1.0);
