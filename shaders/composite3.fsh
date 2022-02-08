@@ -80,6 +80,6 @@ color.rgb = color.rgb * Auto_ExpsoureY();
 color.rgb = color.rgb * Auto_ExpsoureX();
 
 #endif
-
+    /* DRAWBUFFERS:0 */
 	gl_FragData[0] = vec4(color.rgb, 1.0);
 }

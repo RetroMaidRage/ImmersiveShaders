@@ -54,7 +54,6 @@ const int colortex2Format = RGB16;
 #define TONEMAPPING
 #define TonemappingType Uncharted2TonemapOp //[Uncharted2TonemapOp Aces reinhard2 lottes]
 //#define SUNRAYS
-
 #define SkyRenderingType composite //[colortex0 composite]
 #define SUNRAYS_DECAY 0.90 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ]
 #define SUNRAYS_LENGHT 0.7 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 ] //1
@@ -330,9 +329,9 @@ color.rgb += sharpness;
  #endif
 //------------------------------------------------------------------------------------------------------
 #ifdef Chromation_Abberation
-color.r = texture(colortex0, uv - ChromaOffset).r;
+color.r = texture(colortex0, uv - ChromaOffset/1.8).r;
   color.g = texture(colortex0, uv).g;
-    color.b = texture(colortex0, uv + ChromaOffset).b;
+    color.b = texture(colortex0, uv + ChromaOffset/1.8).b;
     #endif
 //------------------------------------------------------------------------------------------------------
 
@@ -515,11 +514,11 @@ colorGR += sample;
   #endif
   //------------------------------------------------------------------------------------------------------------------
   #ifdef RainDrops
-  uv += RainDropCalc(gl_FragCoord.xy);
-  if (rainStrength == 1.0){
+  uv += RainDropCalc(gl_FragCoord.xy)*clamp(rainStrength, 0.0, 0.25);;
+
 color += texture2D(colortex0, uv);
     color /= 3;
-  }
+
   #endif
 //------------------------------------------------------------------------------------------------------------------
   #ifdef BLOOM
@@ -592,10 +591,10 @@ color +=BackColor;
 //------------------------------------------------------------------------------------------------------------------
 #ifdef RainDesaturation
 float Fac = 0.0;
-if (rainStrength == 1){
-     Fac = RainDesaturationFactor;
 
-}
+     Fac = RainDesaturationFactor*clamp(rainStrength, 0.0, 1.0);;
+
+
 vec3 gray = vec3( dot( color.rgb , vec3( 0.2126 , 0.7152 , 0.0722 )));
 color = vec4( mix( color.rgb , gray , Fac) , 1.0 );
 #endif

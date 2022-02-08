@@ -80,7 +80,7 @@ const float ambientOcclusionLevel = 0.0f;
 //--------------------------------------------DEFINE------------------------------------------
 #define shadowResolution 2048 //[512 1024 1536 2048 3072 4096 8192]
 #define SHADOW_SAMPLES 2 //[1 2 3 4 5 6]
-#define ColShadowBoost 7 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
+#define ColShadowBoost 1 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
 
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
@@ -113,6 +113,7 @@ const float ambientOcclusionLevel = 0.0f;
 //#define PuddlesAlways
 #define PuddlesDestiny 1.7 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 #define PuddlesStrenght 10 //[1 2 3 4 5 6 7 8 9 10 11 1213 14 15 16 17 18 19 20 21 22 23 24 25]
+#define PuddlesResolution 10000 //[100 200 300 400 500 600 700 800 900 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000]
 #define MAX_RADIUS 2
 #define DOUBLE_HASH 1
 //--------------------------------------------------------------------------------------------
@@ -127,7 +128,11 @@ bool day =   (worldTime < 1000 || worldTime > 8500);
 bool sunset =   (worldTime < 8500 || worldTime > 12000);
 bool night =   (worldTime < 12000 || worldTime > 21000);
 //--------------------------------------------------------------------------------------------
-bool isHand = texture2D(colortex7, TexCoords).x > 1.1f;
+float Depth = texture2D(depthtex0, TexCoords).r;
+
+bool isHand = texture2D(colortex8, TexCoords).x > 1.1f;
+bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
+bool isTerrain = Depth < 1.0;
 
 vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
@@ -343,6 +348,7 @@ vec3 Water_Absorbtion(vec2 TexCoords)
 #ifdef WaterSSR
 vec4 raytrace(vec3 viewdir, vec3 normal){
   if(isHand){
+  }else{
   //http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2381727-shader-pack-datlax-onlywater-only-water
     vec4 color = vec4(0.0);
     vec4 watercolor_buffer = texture2D(colortex6, texcoord);
@@ -398,7 +404,7 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
   }else{
 
 
-    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)*dot(normal,normalize(upPosition))));
+    vec3 rvector = normalize(reflect(normalize(viewdir), normalize(normal)*sqrt(0.0+max(dot(normal,normalize(upPosition)),0.0))));
     vec3 vector = stp * rvector;
     vec3 oldpos = viewdir;
     viewdir += vector;
@@ -439,15 +445,18 @@ vec4 raytraceGround(vec3 viewdir, vec3 normal){
 #ifdef RainPuddles
 float getRainPuddles(vec3 worldpos, vec3 Normal){
 
-	vec2 coord = (worldpos.xz/10000);
+	vec2 coord = (worldpos.xz/PuddlesResolution);
 
 	float rainPuddles = texture2D(noisetex, (coord.xy*8)).x;
 	rainPuddles += texture2D(noisetex, (coord.xy*4)).x;
 	rainPuddles += texture2D(noisetex, (coord.xy*2)).x;
 	rainPuddles += texture2D(noisetex, (coord.xy/2)).x;
 
-	float strength = max(rainPuddles-PuddlesDestiny,0.0);
+	float strength = max(rainPuddles-PuddlesDestiny/clamp(rainStrength, 0.0, 1.0),0.0);
 
+#ifdef PuddlesAlways
+strength = max(rainPuddles-PuddlesDestiny,0.0);
+#endif
 	return strength;
 }
 #endif
@@ -491,7 +500,6 @@ vec3 viewDir = normalize(lightDir - Vieww.xyz);
 //--------------------------------------------------------------------------------------------
 vec3 Normal = normalize(texture2D(colortex1, TexCoords).rgb * 2.0f - 1.0f);
 vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
-bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
 //------------------------------DIFFUSE--------------------------------------------------------------
     vec2 Lightmap = texture2D(colortex2, TexCoords).rg;
     vec3 frenselcolorNormal = fresnel(rd, Normal);

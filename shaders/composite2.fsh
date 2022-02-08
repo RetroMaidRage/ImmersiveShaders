@@ -179,8 +179,8 @@ color = color + Clouds;
 #endif
 
 
-color.rgb += vec3(0.7,0.7,0.7)*clamp(rainStrength, 0.0, 1.0);        
-
+color.rgb += vec3(0.7,0.7,0.7)*clamp(rainStrength, 0.0, 1.0);
+color.rgb -= vec3(0.7,0.7,0.7)*clamp(TimeMidnight, 0.0, 1.0)*clamp(rainStrength, 0.0, 1.0);
 
 #ifdef Stars
 color += stars(Stars_Position.xz, StarsNum, StarsSize, StarsBright)*texture2D(noisetex, Stars_Position.xz/222)*TimeMidnight; //https://www.shadertoy.com/view/wsKXDm

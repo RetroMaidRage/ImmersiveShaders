@@ -3,7 +3,7 @@
 float AdjustLightmapTorch(in float torch) {
 
        float K =LIGHT_STRENGHT;
-       float P = 8.06f;
+       float P = 7.06f;
         return K * pow(torch, P);
 }
 //--------------------------------------------------------------------------------------------
