@@ -86,7 +86,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 #define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
-#define ColorSettings Summertime //[Summertime Default Composition]
+#define ColorSettings Default //[Summertime Default Composition]
 //#define UseNewDiffuse
 #define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 
@@ -184,7 +184,7 @@ vec3 Summertime =  NfogColor;
 Summertime.r = NfogColor.r*1.5;
 
 vec3 Default = fogColor*1.5;
-Default.r +=0.5;
+
 
 vec3 Composition = NfogColor*1.5;
 Composition.r +=2.8;
@@ -289,6 +289,7 @@ vec3 computeVL(vec3 viewPos) {
     vec3 endPos   = projMAD3(shadowProjection, transMAD3(shadowModelView, mat3(gbufferModelViewInverse) * viewPos));
 
     float jitter = fract(frameTimeCounter + bayer16(gl_FragCoord.xy));
+        float simplenoise = fbm(gl_FragCoord.xy);
     float NoJitter = 1.0;
 
     float dist   = distance(startPos, endPos);
@@ -600,8 +601,8 @@ if(isWater){
   #ifdef RainPuddles
   deltaPos = 0.2;
 
-  posxz.x += sin(posxz.z+frameTimeCounter)*0.25;
-  posxz.z += cos(posxz.x+frameTimeCounter*0.5)*1.25;
+  posxz.x += sin(posxz.z+frameTimeCounter)*10.25;
+  posxz.z += cos(posxz.x+frameTimeCounter*10.5)*1.25;
 
 
 
