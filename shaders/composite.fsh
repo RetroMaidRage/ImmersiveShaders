@@ -84,7 +84,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
 
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
-#define Ambient 0.085 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
+#define Ambient 0.075 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
 #define ColorSettings Default //[Summertime Default Composition]
 //#define UseNewDiffuse
@@ -107,7 +107,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
 #define WaterAbsorption
-#define WaterAbsorptionStrenght 1.0 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define WaterAbsorptionStrenght 1.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 
 #define RainPuddles
 //#define PuddlesAlways
@@ -185,6 +185,10 @@ Summertime.r = NfogColor.r*1.5;
 
 vec3 Default = fogColor*1.5;
 
+vec3 Default2 = fogColor;
+Default2.r +=3.0;
+Default2.g +=0.8;
+Default2.b +=0.8;
 
 vec3 Composition = NfogColor*1.5;
 Composition.r +=2.8;
@@ -227,7 +231,7 @@ vec3 GetShadow(vec4 worldpos) {
 }
 
 //--------------------------------------------------------------------------------------------
-vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse, vec3 frcolor){
+vec3 GetLightmapColor(in vec2 Lightmap, vec4 worldpos, vec3 Albedo, vec3 Diffuse, vec3 frcolor){
 
     Lightmap = AdjustLightmap(Lightmap);
 
@@ -244,11 +248,12 @@ vec3 GetLightmapColor(in vec2 Lightmap, vec3 worldpos, vec3 Albedo, vec3 Diffuse
     Composition.r +=2.8;
     Composition.b +=1.2;
 
+
     const vec3 TorchColor = vec3(1.0f, 0.25f, 0.08f);
 
     float Depthh = texture2D(depthtex0, TexCoords).r;
 
-    vec3 shading = vec3(1) * Diffuse * 1;
+    vec3 shading = vec3(1) * Diffuse * GetShadow(worldpos);
          shading = DynamicSkyColor2 * Albedo * Lightmap.y + shading*2*frcolor;
          shading = TorchColor * Albedo * Lightmap.x + shading;
 
@@ -500,7 +505,7 @@ vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
     }
     //--------------------------------------------------------------------------------------------
     vec3 diffuse = Albedo * NdotL / 3.14;
-    vec3 LightmapColor = GetLightmapColor(Lightmap, worldPos, Albedo, diffuse, frenselcolorNormal);
+    vec3 LightmapColor = GetLightmapColor(Lightmap, World, Albedo, diffuse, frenselcolorNormal);
     vec3 LightmapColorOld = GetLightmapColorOld(Lightmap, worldPos);
     vec3 specular;
     //--------------------------------VANILLA_AO--------------------------------------------------

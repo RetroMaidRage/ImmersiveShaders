@@ -75,7 +75,7 @@ vec3 applyFog( in vec3  rgb, in float distance, in vec3  rayDir, in float coeff,
 
     float fogAmount = 1.0 - exp( -distance*coeff );
     float sunAmount = max(dot(rayDir, sunDir), 0.0);
-    vec3  fogColor  = mix( customFogColorSun, customFogColorWorld, pow(sunAmount,1.0) );
+    vec3  fogColor  = mix( customFogColorSun, customFogColorSun, pow(sunAmount,1.0) );
     return mix( rgb, fogColor, fogAmount );
 
 }
@@ -84,7 +84,7 @@ vec3 applyFogGround( in vec3  rgb,   in float distance, in vec3  rayOri,  in vec
 
     float fogAmount = GroundFogDestiny*exp(-rayOri.y*GroundFogDestiny)*(1.0-exp(-distance*rayDir.y*GroundFogDestiny))/rayDir.y;
 		float sunAmount = max(dot(rayDir, sunDir), 0.0);
-    vec3  fogColor  = mix( customFogColorSun, customFogColorWorld, pow(sunAmount,1.0) );
+    vec3  fogColor  = mix( customFogColorSun, customFogColorSun, pow(sunAmount,1.0) );
     return mix( rgb, fogColor, fogAmount );
 
 }

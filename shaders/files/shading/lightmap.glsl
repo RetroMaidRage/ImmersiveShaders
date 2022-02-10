@@ -1,9 +1,9 @@
-#define LIGHT_STRENGHT 6 //[1 2 3 4 5 6 7 8 9 10]
+#define LIGHT_STRENGHT 2 //[1 2 3 4 5 6 7 8 9 10]
 
 float AdjustLightmapTorch(in float torch) {
 
        float K =LIGHT_STRENGHT;
-       float P = 7.06f;
+       float P = 3.06f;
         return K * pow(torch, P);
 }
 //--------------------------------------------------------------------------------------------
