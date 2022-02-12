@@ -28,6 +28,7 @@ uniform sampler2D colortex1;
 uniform vec3 upPosition;
 const int noiseTextureResolution = 512;
 uniform float rainStrength;
+uniform float wetness;
 /*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGB16;
@@ -58,6 +59,8 @@ float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) +
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);
 float TimeSunset   = ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0) - ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0);
 float TimeMidnight = ((clamp(timefract, 12000.0, 12750.0) - 12000.0) / 750.0) - ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0);
+//------------------------------------------------------------------------------------------
+float Raining = clamp(wetness, 0.0, 1.0);
 //------------------------------------------------------------------------------------------
 #ifdef Stars
 float stars(in vec2 x, float numCells, float size, float br)
@@ -164,12 +167,12 @@ vec2 pos = Cloud_Pos.zx*CloudPositionY;
 #ifdef UseSkyFix
 if(texture2D(depthtex0, texcoord).r == 1.0 && sign(Cloud_Pos + cameraPosition.y) == sign(eyePlayerPos.y)) {
 
-Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + Raining))));
     }else{
-Clouds = mix(color, fogColor, pow(abs(rainStrength), (CloudDestiny-(1.0 + rainStrength))));
+Clouds = mix(color, fogColor, pow(abs(rainStrength), (CloudDestiny-(1.0 + Raining))));
 }
 #else
-Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + rainStrength))));
+Clouds = mix(color, fogColor, pow(abs(awan), (CloudDestiny-(1.0 + Raining))));
 #endif
 //----------------------------------------------------------------------------------------
 #ifdef Cloud

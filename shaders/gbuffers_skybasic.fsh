@@ -15,6 +15,7 @@ uniform vec3 sunPosition;
 uniform vec4 texcoord;
 uniform vec3 moonPosition;
 uniform float frameTimeCounter;
+uniform float rainStrength;
 uniform vec3 shadowLightPosition;
 uniform int worldTime;
 uniform mat4 gbufferModelViewInverse;

@@ -5,6 +5,7 @@ uniform sampler2D colortex0;
 uniform vec3 skyColor;
 uniform vec2 TexCoords;
 uniform float far;
+uniform float wetness;
 uniform float near;
 uniform float frameTimeCounter;
 varying vec4 texcoord;
@@ -29,7 +30,8 @@ float     GetDepthLinear(in vec2 coord) {
    return 2.0f * near * far / (far + near - (2.0f * texture2D(depthtex0, coord).x - 1.0f) * (far - near));
 }
 //-------------------------------------------------------------------------------------------
-
+float Raining =  clamp(wetness, 0.0, 1.0);
+//-------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
 float TimeNoon     = ((clamp(timefract, 0.0, 4000.0)) / 4000.0) - ((clamp(timefract, 8000.0, 12000.0) - 8000.0) / 4000.0);

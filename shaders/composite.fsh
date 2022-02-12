@@ -58,6 +58,7 @@ in vec2 textureCoordinates;
 uniform sampler2D gnormal;
 uniform mat4 gbufferModelView;
 in  float entityId;
+uniform float wetness;
 //--------------------------------------------CONST------------------------------------------
 
 /*
@@ -86,7 +87,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 #define Ambient 0.075 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
-#define ColorSettings Default //[Summertime Default Composition]
+#define ColorSettings Default //[Summertime DefaultRed   Composition]
 //#define UseNewDiffuse
 #define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 
@@ -107,7 +108,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
 #define WaterAbsorption
-#define WaterAbsorptionStrenght 1.5 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define WaterAbsorptionStrenght 1.25 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 
 #define RainPuddles
 //#define PuddlesAlways
@@ -116,6 +117,17 @@ const float ambientOcclusionLevel = 0.0f;
 #define PuddlesResolution 10000 //[100 200 300 400 500 600 700 800 900 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000]
 #define MAX_RADIUS 2
 #define DOUBLE_HASH 1
+//--------------------------------------------------------------------------------------------
+const float stp = 1.2;			//size of one step for raytracing algorithm
+const float ref = 0.1;			//refinement multiplier
+const float inc = 2.2;			//increasement factor at each step
+const int maxf = 4;				//number of refinements
+//--------------------------------------------------------------------------------------------
+const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
+const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
+//--------------------------------------------------------------------------------------------
+const float wetnessHalflife = 700.0f;
+const float drynessHalflife = 100.0f;
 //--------------------------------------------------------------------------------------------
 float timefract = worldTime;
 float TimeSunrise  = ((clamp(timefract, 23000.0, 24000.0) - 23000.0) / 1000.0) + (1.0 - (clamp(timefract, 0.0, 4000.0)/4000.0));
@@ -128,11 +140,11 @@ bool day =   (worldTime < 1000 || worldTime > 8500);
 bool sunset =   (worldTime < 8500 || worldTime > 12000);
 bool night =   (worldTime < 12000 || worldTime > 21000);
 //--------------------------------------------------------------------------------------------
-float Depth = texture2D(depthtex0, TexCoords).r;
-
 bool isHand = texture2D(colortex8, TexCoords).x > 1.1f;
 bool isWater = texture2D(colortex7, TexCoords).x > 1.1f;
-bool isTerrain = Depth < 1.0;
+bool isTerrain = texture2D(depthtex0, TexCoords).r < 1.0;
+
+float Raining =  clamp(wetness, 0.0, 1.0);
 
 vec3 sunsetSkyColor = vec3(0.07f, 0.15f, 0.3f);
 vec3 daySkyColor = vec3(0.3, 0.5, 1.1)*0.2;
@@ -144,14 +156,6 @@ vec3 DynamicSkyColor2 = (sunsetSkyColor*skyColor*TimeSunrise + skyColor*TimeNoon
 vec3 diag3(mat4 mat) { return vec3(mat[0].x, mat[1].y, mat[2].z); }
 vec3 projMAD3(mat4 mat, vec3 v) { return diag3(mat) * v + mat[3].xyz;  }
 vec3 transMAD3(mat4 mat, vec3 v) { return mat3(mat) * v + mat[3].xyz; }
-//--------------------------------------------------------------------------------------------
-const float stp = 1.2;			//size of one step for raytracing algorithm
-const float ref = 0.1;			//refinement multiplier
-const float inc = 2.2;			//increasement factor at each step
-const int maxf = 4;				//number of refinements
-//--------------------------------------------------------------------------------------------
-const int ShadowSamplesPerSize = 2 * SHADOW_SAMPLES + 1;
-const int TotalSamples = ShadowSamplesPerSize * ShadowSamplesPerSize;
 //--------------------------------------------------------------------------------------------
 vec3 nvec3(vec4 pos){
     return pos.xyz/pos.w;
@@ -185,10 +189,9 @@ Summertime.r = NfogColor.r*1.5;
 
 vec3 Default = fogColor*1.5;
 
-vec3 Default2 = fogColor;
-Default2.r +=3.0;
-Default2.g +=0.8;
-Default2.b +=0.8;
+
+vec3 DefaultRed = fogColor*1.5;
+DefaultRed.r +=0.75+clamp(rainStrength, 0.0, -0.75);
 
 vec3 Composition = NfogColor*1.5;
 Composition.r +=2.8;
@@ -453,7 +456,7 @@ float getRainPuddles(vec3 worldpos, vec3 Normal){
 	rainPuddles += texture2D(noisetex, (coord.xy*2)).x;
 	rainPuddles += texture2D(noisetex, (coord.xy/2)).x;
 
-	float strength = max(rainPuddles-PuddlesDestiny/clamp(rainStrength, 0.0, 1.0),0.0);
+	float strength = max(rainPuddles-PuddlesDestiny/Raining,0.0);
 
 #ifdef PuddlesAlways
 strength = max(rainPuddles-PuddlesDestiny,0.0);
@@ -531,7 +534,7 @@ float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1536);
 }
 
 //--------------------------------------------------------------------------------------------
-float ShadowOn = NdotL;
+float ShadowOn = NdotL*0.5;
 float ShadowOff = 0.25;
 //----------------------------------DIFFUS-------------------------------------------------
 #ifdef UseNewDiffuse
@@ -695,12 +698,15 @@ if(isWater){
 #ifdef PuddlesAlways
     rainpuddles = mix(rainPuddles/PuddlesStrenght,rainPuddles/PuddlesStrenght, rainpuddleee)*reflection2Rain;
 #else
-   rainpuddles = mix(rainPuddles/PuddlesStrenght,rainPuddles/PuddlesStrenght, rainpuddleee)*reflection2Rain*clamp(rainStrength, 0.0, 1.0);
+   rainpuddles = mix(rainPuddles/PuddlesStrenght,rainPuddles/PuddlesStrenght, rainpuddleee)*reflection2Rain*Raining;
  #endif
 
 }
 #endif
 //----------------------------------OUTPUT----------------------------------------------------------
+//speed *= (0.001+rainStrength); //generate static noise after raining stopped for an improved wetness effect
+//offset *= rainNoise;
+//return texture2D(noisetex, fract(coord*offset + frameTimeCounter*speed)).x/offset;
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+(newnormalmultiplyWater/5*texture2D(gcolor, TexCoords))+vec4(specular, 1.0)+rainpuddles;
 
