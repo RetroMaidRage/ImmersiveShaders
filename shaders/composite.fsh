@@ -87,7 +87,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 #define Ambient 0.075 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
 
-#define ColorSettings Default //[Summertime DefaultRed   Composition]
+#define ColorSettings Summertime //[Summertime Default DefaultRed   Composition]
 //#define UseNewDiffuse
 #define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 
@@ -108,7 +108,7 @@ const float ambientOcclusionLevel = 0.0f;
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
 #define WaterAbsorption
-#define WaterAbsorptionStrenght 1.25 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define WaterAbsorptionStrenght 0.75 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 
 #define RainPuddles
 //#define PuddlesAlways
@@ -516,7 +516,7 @@ vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
     const float ambientOcclusionLevel = 1.0f;
     #endif
 //-------------------------------FRENSEL--------------------------------------------------------
-vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*2.5;
+vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*3.5;
 //--------------------------SPECULAR----------------------------------------------------
 if(isWater){
 
@@ -704,9 +704,6 @@ if(isWater){
 }
 #endif
 //----------------------------------OUTPUT----------------------------------------------------------
-//speed *= (0.001+rainStrength); //generate static noise after raining stopped for an improved wetness effect
-//offset *= rainNoise;
-//return texture2D(noisetex, fract(coord*offset + frameTimeCounter*speed)).x/offset;
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+(newnormalmultiplyWater/5*texture2D(gcolor, TexCoords))+vec4(specular, 1.0)+rainpuddles;
 

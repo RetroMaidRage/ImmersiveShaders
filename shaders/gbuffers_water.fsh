@@ -210,7 +210,7 @@ vec3 Chill = Normal;
 //---------------------------------------------------------------------------------------------------------------------------
 vec4 w = vec4(0.1, 0.2, 0.3, 0.27);
 vec4 w2 = vec4(0.8);
-cwater.rgb += 0.05,0.05,0.05;
+cwater.rgb += 0.25,0.25,0.25;
     vec4 outputWater = mix(fresnelColor, cwater, frensel);
       vec4 outputIce = mix(fresnelColor, color, frensel);
 outputWater.a = WaterTransparent;
@@ -220,7 +220,8 @@ if (id == 10006) {
   gl_FragData[0] = outputIce*outputIce;
 }
 if (id == 10001) {
-gl_FragData[0] = outputWater;
+  outputWater.a =0.9;
+gl_FragData[0] =outputWater;
 gl_FragData[1] = frag2;
 // gl_FragData[1] = vec4(Normal * 0.5f + 0.5f, 1.0f);
 gl_FragData[2] = vec4(10.0f);
