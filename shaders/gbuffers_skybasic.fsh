@@ -67,7 +67,7 @@ void main() {
 vec3 nightColor = vec3(0.1, 0.5, 1.0)*0.51;
 vec3 nightFogColor = vec3(0.1, 0.5, 1.0)*0.14;
 
-vec3 sunsetFogColor = vec3(0.8, 0.66, 110.5)*1.2;
+vec3 sunsetFogColor = vec3(0.8, 0.66, 1.5)*1.2;
 vec3 sunsetSkyColor = vec3(0.8, 0.66, 0.5)*skyColor;
 
 vec3 customSkyColor = (sunsetSkyColor*TimeSunrise + skyColor*TimeNoon + sunsetSkyColor*TimeSunset + skyColor*TimeMidnight);
