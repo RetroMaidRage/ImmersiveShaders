@@ -233,7 +233,19 @@ vec3 lOff(){
 //--------------------------------------------MAIN------------------------------------------------------
 
 
+float computeEV100FromAvgLuminance(float avgLuminance)
+{
+    return log2(avgLuminance * 100.0f / 12.5f);
+}
 
+float convertEV100toExposure(float EV100)
+{
+    float maxLuminance = 1.2f * pow(2.0f, EV100);
+    return 1.0 / maxLuminance;
+}
+float luminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
 #ifdef LensFlare
 vec3 lensflarer(vec2 uv,vec2 pos)
 {
@@ -638,6 +650,7 @@ vec3 BR = texture(colortex0, uv + vec2(1, -1)/ GetSreenRes).rgb;
 
 vec3 GradX = -TL + TR - 2.0 * ML + 2.0 * MR - BL + BR;
 vec3 GradY = TL + 2.0 * TM + TR - BL - 2.0 * BM - BR;
+
 
 
 gl_FragColor = color;

@@ -69,6 +69,7 @@ const int colortex6Format = RGB16;
 const int colortex8Format = RGBA32F;
 const int colortex7Format = RGBA32F;
 */
+
 #define ShadowRenderDistance 100.0f //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
 #define NoiseTextureResolution 256 //[10.0f 20.0f 30.0f 40.0f 50.0f 60.0f 70.0f 80.0f 90.0f 100.0f 110.0f 120.0f 130.0f 140.0f 150.0f 160.0f 170.0f 180.0f]
 
@@ -77,39 +78,38 @@ const int shadowMapResolution = 2048;
 const int noiseTextureResolution = 1*NoiseTextureResolution;
 const float shadowDistance = 1.0f*ShadowRenderDistance;
 const float ambientOcclusionLevel = 0.0f;
-
 //--------------------------------------------DEFINE------------------------------------------
 #define shadowResolution 2048 //[512 1024 1536 2048 3072 4096 8192]
 #define SHADOW_SAMPLES 2 //[1 2 3 4 5 6]
 #define ColShadowBoost 1 //[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
 #define GrassShadow ShadowOff //[ShadowOn ShadowOff]
-
+//--------------------------------------------------------------------------------------------
 #define TerrainColorType DynamicTime //[DynamicTime StaticTime]
 #define Ambient 0.075 ///[0.1 0.11 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5 6.0 7.0 8.0 9.0 10 15 20]
-
+//--------------------------------------------------------------------------------------------
 #define ColorSettings Summertime //[Summertime Default DefaultRed   Composition]
 //#define UseNewDiffuse
 #define SkyLightingStrenght 0.75 //[/[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0] 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 223 24 25 26 27 28 29 30]
-
+//--------------------------------------------------------------------------------------------
 #define VanillaAmbientOcclusion
-
+//--------------------------------------------------------------------------------------------
 #define specularLight
-
+//--------------------------------------------------------------------------------------------
 #define volumetric_Fog
 #define VL_Samples 64 //[12 16 18 20 24 28 32 48 64 128 256]
-#define VL_Strenght 0.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define VL_Strenght 0.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10 15 20]
 #define VL_UseJitter NoJitter //[jitter]
 #define VL_Color  DynamicVolumetricColor //[StaticVolumetricColor]
-
+//--------------------------------------------------------------------------------------------
 #define OUTPUT Diffuse //[Normal Albedo specular DiffuseAndSpecular]
 #define GammaSettings 2.2 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 //#define TonemappingType Uncharted2TonemapOpComposite //[Uncharted2TonemapOp Aces reinhard2 lottes]
-
+//--------------------------------------------------------------------------------------------
 #define SSR_WaterNormals NormalWater //[NormalWater]
 #define WaterSSR
 #define WaterAbsorption
 #define WaterAbsorptionStrenght 0.75 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
-
+//--------------------------------------------------------------------------------------------
 #define RainPuddles
 //#define PuddlesAlways
 #define PuddlesDestiny 1.7 //[0.1 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]

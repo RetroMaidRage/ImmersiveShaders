@@ -10,7 +10,7 @@ uniform float viewHeight;
 #define EDGE_STEP_COUNT 20
 #define EDGE_GUESS 8.0f
 #define EDGE_STEPS 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8, 0.9f, 1.0f, 1.5f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 4.0f, 2.0f
-#define THREASHOLD_FXAA 10 //[0 10]
+#define THREASHOLD_FXAA 0 //[0 10]
 const float edgeSteps[EDGE_STEP_COUNT] = float[EDGE_STEP_COUNT]( EDGE_STEPS );
 
 float _ContrastThreshold = 0.0312f+THREASHOLD_FXAA;
