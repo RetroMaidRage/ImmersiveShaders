@@ -42,7 +42,6 @@ ImmersiveShaders - this project focused on good optimization and flexible custom
 Without LightShafts with mc max settings with 10 chunk: fps 100-150 (videocard gtx 1050 ti).
 ### Problems
  - Worldtime.
- - Screen Space Reflections
  - etc.
  - You can report of bug to my discord: Quiet#8987
 ### Planing
