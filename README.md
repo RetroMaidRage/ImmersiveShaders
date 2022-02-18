@@ -50,6 +50,18 @@ Without LightShafts with mc max settings with 10 chunk: fps 100-150 (videocard g
 - Atmosphere Scattering
 - Light Flickr
 - Optimization
+### BufferUsage
+- colortex1 - Normals
+- colortex2 - Lightmap
+- colortex5 - WaterNormals
+- colortex7 - WaterOpaqueMask
+- colortex7 - WaterColorGbuffer
+- final - PostProcces
+- composite - general,volumetric, specular, water, puddles
+- composite1 - fog
+- composite2 - sky, stars, clouds
+- composite3 - auto exposition
+- composite7 - fog
 ### Credits
 ImmersiveShaders/Summertime by RetroMaidRage
 -if my shader have code from your shader, and you don't like this, tell me =)
