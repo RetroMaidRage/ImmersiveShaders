@@ -64,4 +64,5 @@ Without LightShafts with mc max settings with 10 chunk: fps 100-150 (videocard g
 - composite7 - fog
 ### Credits
 ImmersiveShaders/Summertime by RetroMaidRage
+some effect from shadertoy or other shaders
 -if my shader have code from your shader, and you don't like this, tell me =)
