@@ -33,6 +33,7 @@ uniform mat4 shadowProjection;
 uniform float fogDensity;
 uniform vec3 fogColor;
 uniform vec3 sunPosition;
+uniform vec3 SkyPos;
 uniform vec3 moonPosition;
 varying vec2 TexCoords;
 uniform float worldTime;
@@ -279,6 +280,10 @@ vec3 GetLightmapColorOld(in vec2 Lightmap, vec3 worldpos){
     return LightmapLighting;
 }
 //--------------------------------------------------------------------------------------------
+float phaseHG(float g, float cst) {
+    float gg = g*g;
+    return (1.0 - gg) / (4.0*3.14*pow(1.0+gg-2.0*g*cst, 1.5));
+}
 #ifdef volumetric_Fog
 vec3 computeVL(vec3 viewPos) {
     vec3 color = vec3(0.0);
@@ -297,7 +302,7 @@ vec3 computeVL(vec3 viewPos) {
     vec3 endPos   = projMAD3(shadowProjection, transMAD3(shadowModelView, mat3(gbufferModelViewInverse) * viewPos));
 
     float jitter = fract(frameTimeCounter + bayer16(gl_FragCoord.xy));
-        float simplenoise = fbm(gl_FragCoord.xy);
+    float simplenoise = fbm(gl_FragCoord.xy);
     float NoJitter = 1.0;
 
     float dist   = distance(startPos, endPos);
@@ -330,6 +335,7 @@ vec3 fresnel(vec3 raydir, vec3 normal){
     vec3 F0 = vec3(1.0);
     return F0+(1.0-F0)*pow(1.0-dot(-raydir, normal), 5.0);
 }
+
 //--------------------------------------------------------------------------------------------
 #ifdef WaterAbsorption
 vec3 Water_Absorbtion(vec2 TexCoords)
@@ -465,6 +471,8 @@ strength = max(rainPuddles-PuddlesDestiny,0.0);
 }
 #endif
 //--------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------
 void main(){
     vec3 Albedo = pow(texture2D(colortex0, TexCoords).rgb, vec3(GammaSettings));
 
@@ -511,12 +519,15 @@ vec3 NormalWater = normalize(texture2D(colortex5, TexCoords).rgb * 2.0f - 1.0f);
     vec3 LightmapColor = GetLightmapColor(Lightmap, World, Albedo, diffuse, frenselcolorNormal);
     vec3 LightmapColorOld = GetLightmapColorOld(Lightmap, worldPos);
     vec3 specular;
+    float cosTheta = dot(normalize(SkyPos), normalize(sunPosition));
     //--------------------------------VANILLA_AO--------------------------------------------------
     #ifdef VanillaAmbientOcclusion
     const float ambientOcclusionLevel = 1.0f;
     #endif
 //-------------------------------FRENSEL--------------------------------------------------------
-vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*3.5;
+vec3 frenselcolor = fresnel(rd, SSR_WaterNormals)*1.5;
+    float fresnelc = clamp(1.0 - dot(SSR_WaterNormals, -eyePlayerPos), 0.0, 1.0);
+    fresnelc = pow(fresnelc, 3.0) * 0.65;
 //--------------------------SPECULAR----------------------------------------------------
 if(isWater){
 
@@ -706,5 +717,6 @@ if(isWater){
 //----------------------------------OUTPUT----------------------------------------------------------
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(OUTPUT, 1.0)*absorbtion*reflection2+(newnormalmultiplyWater/5*texture2D(gcolor, TexCoords))+vec4(specular, 1.0)+rainpuddles;
+
 
 }

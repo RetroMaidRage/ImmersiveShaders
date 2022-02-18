@@ -82,7 +82,7 @@ lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 											+ 0.085 * sin(1 * pi * (tick*0.6 + vworldpos.x / 11.0 + vworldpos.z /  5.0));
 											displacement = clamp(wave, -fy, 1.0-fy);
 
-											vpos.y += displacement;
+											//vpos.y += displacement;
 
 										//		vpos.y += wave;
 										#ifdef WaveMultiplyVertex
